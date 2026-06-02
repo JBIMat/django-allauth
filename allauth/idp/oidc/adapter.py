@@ -205,6 +205,17 @@ class DefaultOIDCAdapter(BaseAdapter):
         """
         pass
 
+    def is_cimd_url_allowed(self, url: str) -> bool:
+        """
+        Determines whether the given CIMD (Client ID Metadata Document) URL is
+        accepted as a ``client_id``.
+
+        Override this method to restrict which clients can authenticate via CIMD,
+        for example by maintaining a domain allowlist.  The default implementation
+        accepts all URLs that pass structural validation.
+        """
+        return True
+
 
 def get_adapter() -> DefaultOIDCAdapter:
     return import_attribute(app_settings.ADAPTER)()

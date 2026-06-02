@@ -71,6 +71,8 @@ class AppSettings:
             "device_user_code": "5/m/ip",
             # DCR
             "client_registration": "3/m/ip",
+            # CIMD fetches
+            "cimd_fetch": "3/m/ip",
         }
         ret.update(rls)
         return ret
@@ -111,6 +113,23 @@ class AppSettings:
         perform Dynamic Client Registration.
         """
         return self._setting("DCR_REQUIRES_INITIAL_ACCESS_TOKEN", True)
+
+    @property
+    def CIMD_ENABLED(self) -> bool:
+        """
+        Whether or not CIMD is enabled.
+
+        https://datatracker.ietf.org/doc/draft-ietf-oauth-client-id-metadata-document/
+        https://client.dev/
+        """
+        return self._setting("CIMD_ENABLED", False)
+
+    @property
+    def CIMD_CACHE_TIMEOUT(self) -> int:
+        """
+        CIMD cache duration, in seconds.
+        """
+        return self._setting("CIMD_CACHE_TIMEOUT", 60 * 60)
 
 
 _app_settings = AppSettings("IDP_OIDC_")

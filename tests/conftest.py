@@ -513,3 +513,10 @@ def messagesoutbox():
 
     adapters.messagesoutbox = []
     yield adapters.messagesoutbox
+
+
+@pytest.fixture
+def request_context(rf):
+    request = rf.get("/")
+    with context.request_context(request):
+        yield request

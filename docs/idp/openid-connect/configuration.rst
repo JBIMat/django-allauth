@@ -26,6 +26,13 @@ Available settings:
   ``Authorization`` header (``Bearer <token>``). This limits registration to
   previously authorized parties.
 
+``IDP_OIDC_CIMD_CACHE_TIMEOUT`` (default: 3600)
+  The time (in seconds) to cache fetched CIMD metadata before re-fetching.
+
+``IDP_OIDC_CIMD_ENABLED`` (default: ``False``)
+  Controls whether Client ID Metadata Document support is enabled. When enabled,
+  clients can use an HTTPS URL as their ``client_id``.
+
 ``IDP_OIDC_DEVICE_CODE_EXPIRES_IN`` (default: 300)
   The time (in seconds) after which device codes expire.
 
@@ -42,7 +49,7 @@ Available settings:
 ``IDP_OIDC_PRIVATE_KEY`` (default: ``""``)
   The private key used for creating ID tokens (and ``.well-known/jwks.json``).
 
-``IDP_OIDC_RATE_LIMITS`` (default: ``{"device_user_code": "5/m/ip", "client_registration": "3/m/ip"}``)
+``IDP_OIDC_RATE_LIMITS`` (default: ``{"device_user_code": "5/m/ip", "client_registration": "3/m/ip", "cimd_fetch": "3/m/ip"}``)
   Rate limit configuration.
 
 ``IDP_OIDC_ROTATE_REFRESH_TOKEN`` (default: ``True``)

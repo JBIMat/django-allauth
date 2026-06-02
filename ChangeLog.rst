@@ -11,7 +11,7 @@
 Note worthy changes
 -------------------
 
-- ...
+- IdP: Added support for Client ID Metadata Document (CIMD).
 
 
 65.18.0 (2026-05-29)

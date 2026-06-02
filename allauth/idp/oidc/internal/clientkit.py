@@ -7,6 +7,8 @@ from urllib.parse import ParseResult, parse_qsl, urlparse
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
+from allauth.idp.oidc import app_settings
+from allauth.idp.oidc.internal import cimd
 from allauth.idp.oidc.models import Client
 
 
@@ -163,7 +165,10 @@ def clean_post_logout_redirect_uri(
 
 
 def lookup_client(client_id: str) -> Client | None:
-    return Client.objects.filter(id=client_id).first()
+    client = Client.objects.filter(id=client_id).first()
+    if not app_settings.CIMD_ENABLED:
+        return client
+    return cimd.lookup_client(client_id, client)
 
 
 def lookup_public_client(client_id: str) -> Client | None:
