@@ -160,3 +160,16 @@ def clean_post_logout_redirect_uri(
     if not parsed.scheme or parsed.scheme not in allowed_schemes:
         return None
     return post_logout_redirect_uri
+
+
+def lookup_client(client_id: str) -> Client | None:
+    return Client.objects.filter(id=client_id).first()
+
+
+def lookup_public_client(client_id: str) -> Client | None:
+    client = lookup_client(client_id)
+    if not client:
+        return None
+    if client.type != Client.Type.PUBLIC:
+        return None
+    return client

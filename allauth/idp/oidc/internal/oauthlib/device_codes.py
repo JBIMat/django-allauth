@@ -23,6 +23,7 @@ from oauthlib.oauth2.rfc8628.errors import (
 from allauth.account.adapter import get_adapter as get_account_adapter
 from allauth.account.internal.userkit import str_to_user_id, user_id_to_str
 from allauth.core.internal.cryptokit import compare_user_code
+from allauth.idp.oidc.internal.clientkit import lookup_public_client
 from allauth.idp.oidc.internal.oauthlib.utils import get_validator_context
 from allauth.idp.oidc.models import Client
 
@@ -57,15 +58,6 @@ def create(client_id: str, scope: list[str] | None, data: dict[str, Any]) -> Non
     )
 
 
-def lookup_client(client_id: str) -> Client | None:
-    client = Client.objects.filter(id=client_id).first()
-    if not client:
-        return None
-    if client.type != Client.Type.PUBLIC:
-        return None
-    return client
-
-
 def validate_user_code(code: str) -> tuple[str, Client]:
     data: dict[str, Any] | None = None
     device_code = cache.get(cache_user_code_key(code))
@@ -77,7 +69,7 @@ def validate_user_code(code: str) -> tuple[str, Client]:
         or not compare_user_code(actual=code, expected=data["device"]["user_code"])
     ):
         raise get_account_adapter().validation_error("incorrect_code")
-    client = lookup_client(data["client_id"])
+    client = lookup_public_client(data["client_id"])
     if not client:
         raise get_account_adapter().validation_error("incorrect_code")
     return device_code, client
@@ -109,7 +101,7 @@ def poll_device_code(
     device_code = request.POST.get("device_code")
     if not client_id or not device_code:
         raise InvalidRequestError
-    client = lookup_client(client_id)
+    client = lookup_public_client(client_id)
     if not client:
         raise InvalidClientError
     if client.GrantType.DEVICE_CODE not in client.get_grant_types():

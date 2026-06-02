@@ -12,7 +12,10 @@ from allauth.core import context
 from allauth.core.internal import ratelimit
 from allauth.idp.oidc import app_settings
 from allauth.idp.oidc.adapter import get_adapter
-from allauth.idp.oidc.internal.clientkit import clean_post_logout_redirect_uri
+from allauth.idp.oidc.internal.clientkit import (
+    clean_post_logout_redirect_uri,
+    lookup_client,
+)
 from allauth.idp.oidc.internal.oauthlib import device_codes
 from allauth.idp.oidc.internal.tokens import decode_jwt_token
 from allauth.idp.oidc.models import Client
@@ -163,7 +166,7 @@ class RPInitiatedLogoutForm(forms.Form):
                 client_id = aud
 
         if client_id:
-            client = Client.objects.filter(id=client_id).first()
+            client = lookup_client(client_id)
             if not client:
                 # Wipe invalid inputs.
                 client_id = cleaned_data["client_id"] = None

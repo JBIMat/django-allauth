@@ -18,6 +18,7 @@ from allauth.idp.oidc.adapter import get_adapter
 from allauth.idp.oidc.internal.clientkit import (
     is_origin_allowed,
     is_redirect_uri_allowed,
+    lookup_client,
 )
 from allauth.idp.oidc.internal.oauthlib import authorization_codes
 from allauth.idp.oidc.internal.oauthlib.utils import (
@@ -447,7 +448,7 @@ class OAuthLibRequestValidator(RequestValidator):
         if client_id in cache:
             client = cache[client_id]
         else:
-            client = Client.objects.filter(id=client_id).first()
+            client = lookup_client(client_id)
             cache[client_id] = client
         return client
 
