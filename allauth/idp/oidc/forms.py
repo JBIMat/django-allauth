@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from django import forms
+from django.core.exceptions import ValidationError
 from django.forms import widgets
 from django.utils.translation import gettext as _
 
@@ -120,7 +121,7 @@ class RPInitiatedLogoutForm(forms.Form):
 
     # OPTIONAL. URI to which the RP is requesting that the End-User's User Agent
     # be redirected after a logout has been performed.
-    post_logout_redirect_uri = forms.URLField(required=False, widget=forms.HiddenInput)
+    post_logout_redirect_uri = forms.CharField(required=False, widget=forms.HiddenInput)
 
     # OPTIONAL. Opaque value used by the RP to maintain state between the logout
     # request and the callback to the endpoint specified by the
@@ -173,9 +174,12 @@ class RPInitiatedLogoutForm(forms.Form):
                 if aud:
                     id_token_hint = cleaned_data["id_token_hint"] = None
 
-        cleaned_data["post_logout_redirect_uri"] = clean_post_logout_redirect_uri(
-            post_logout_redirect_uri, client
-        )
+        try:
+            cleaned_data["post_logout_redirect_uri"] = clean_post_logout_redirect_uri(
+                post_logout_redirect_uri, client
+            )
+        except ValidationError as e:
+            self.add_error("post_logout_redirect_uri", e)
         cleaned_data["client"] = client
         return cleaned_data
 

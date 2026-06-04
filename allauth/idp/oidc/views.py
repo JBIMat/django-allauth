@@ -534,9 +534,7 @@ class LogoutView(FormView):
             op_logout = True
         return self._handle(form, op_logout)
 
-    def _handle(
-        self, form: RPInitiatedLogoutForm, op_logout: bool
-    ) -> HttpResponseRedirect:
+    def _handle(self, form: RPInitiatedLogoutForm, op_logout: bool) -> HttpResponse:
         cleaned_data = form.cleaned_data
         flows.rp_initiated_logout(
             self.request,
@@ -551,7 +549,12 @@ class LogoutView(FormView):
                 redirect_uri = add_query_params(redirect_uri, {"state": state})
         else:
             redirect_uri = get_account_adapter().get_logout_redirect_url(self.request)
-        return HttpResponseRedirect(redirect_uri)
+
+        # Not using HttpResponseRedirect -- that one checks schemes, and here
+        # we might be redirecting to an app native url.
+        response = HttpResponse(status=HTTPStatus.FOUND)
+        response["Location"] = redirect_uri
+        return response
 
     def _must_ask(self, form: RPInitiatedLogoutForm) -> bool:
         """

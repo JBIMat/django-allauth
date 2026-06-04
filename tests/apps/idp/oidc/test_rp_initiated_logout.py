@@ -19,7 +19,7 @@ from allauth.idp.oidc.models import Token
             "mystate",
             "https://rp.client/logged-out?state=mystate",
         ),
-        ("http://no-http.org/please", None, "/"),
+        ("http://no-http.org/please", None, None),
     ],
 )
 def test_logout_while_anonymous(
@@ -37,8 +37,14 @@ def test_logout_while_anonymous(
         resp = client.get(reverse("idp:oidc:logout") + (f"?{query}" if query else ""))
     else:
         resp = client.post(reverse("idp:oidc:logout"), data=params)
-    assert resp.status_code == HTTPStatus.FOUND
-    assert resp["location"] == expected_location
+    if expected_location is None:
+        assert resp.status_code == HTTPStatus.OK
+        assert resp.context["error_form"].errors["post_logout_redirect_uri"] == [
+            "Enter a valid URL."
+        ]
+    else:
+        assert resp.status_code == HTTPStatus.FOUND
+        assert resp["location"] == expected_location
 
 
 @pytest.mark.parametrize("method", ["GET", "POST"])
@@ -112,3 +118,33 @@ def test_logout_without_asking(
     resp = auth_client.get(reverse("account_email"))
     assert resp.status_code == HTTPStatus.FOUND
     assert resp["location"].startswith(reverse("account_login"))
+
+
+@pytest.mark.parametrize(
+    "logout_url,valid",
+    [
+        # Invalid https URL
+        ("https://org.allauth.app://logout", False),
+        # Scheme matches on of the redirect URIs
+        ("org.allauth.app://logout", True),
+        # Unknown scheme
+        ("com.allauth.app://logout", False),
+    ],
+)
+def test_app_logout_redirect_uri(client, oidc_client, logout_url, valid):
+    oidc_client.set_redirect_uris(["org.allauth.app://callback"])
+    oidc_client.save()
+    params = {
+        "client_id": oidc_client.pk,
+        "post_logout_redirect_uri": logout_url,
+    }
+    query = urlencode(params)
+    resp = client.get(reverse("idp:oidc:logout") + (f"?{query}" if query else ""))
+    if valid:
+        assert resp.status_code == HTTPStatus.FOUND
+        assert resp["location"] == logout_url
+    else:
+        assert resp.status_code == HTTPStatus.OK
+        assert resp.context["error_form"].errors["post_logout_redirect_uri"] == [
+            "Enter a valid URL."
+        ]

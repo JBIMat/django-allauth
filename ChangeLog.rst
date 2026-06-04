@@ -14,6 +14,12 @@ Note worthy changes
 - IdP: Added support for Client ID Metadata Document (CIMD).
 
 
+Fixes
+-----
+
+- IdP: App native URLs wouldn't be accepted as ``post_logout_redirect_uri``.
+
+
 65.18.0 (2026-05-29)
 ********************
 
