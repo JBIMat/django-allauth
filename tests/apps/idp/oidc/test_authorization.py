@@ -611,3 +611,55 @@ def test_authorization_code_requested_granted_resources(
             "error": "invalid_target",
             "error_description": "The requested resource is invalid, missing, unknown, or malformed.",
         }
+
+
+@pytest.mark.parametrize("skip_consent", [False, True])
+@pytest.mark.parametrize("action", ["grant", "deny"])
+def test_authorization_code_app_redirect_uri(
+    auth_client,
+    user,
+    oidc_client,
+    oidc_client_secret,
+    enable_cache,
+    skip_consent,
+    action,
+):
+    redirect_uri = "org.allauth.app://callback"
+    oidc_client.set_redirect_uris([redirect_uri])
+    oidc_client.skip_consent = skip_consent
+    oidc_client.save()
+    resp = auth_client.get(
+        reverse("idp:oidc:authorization")
+        + "?"
+        + urlencode(
+            {
+                "client_id": oidc_client.id,
+                "response_type": "code",
+                "scope": "openid profile email",
+                "nonce": "some-nonce",
+                "state": "some-state",
+                "redirect_uri": redirect_uri,
+            }
+        )
+    )
+    if not skip_consent:
+        assert resp.status_code == HTTPStatus.OK
+        post_data = {
+            "scopes": ["openid"],
+            "action": action,
+            "request": resp.context["form"]["request"].value(),
+        }
+        resp = auth_client.post(
+            reverse("idp:oidc:authorization"),
+            post_data,
+        )
+        if action == "deny":
+            assert (
+                resp["location"]
+                == f"{redirect_uri}?error=access_denied&state=some-state"
+            )
+            return
+
+    assert resp.status_code == HTTPStatus.FOUND
+    redirected_uri = resp["location"]
+    assert redirected_uri.startswith(redirect_uri)

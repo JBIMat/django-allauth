@@ -66,6 +66,17 @@ from allauth.idp.oidc.models import Client, Token
 from allauth.utils import build_absolute_uri
 
 
+class _ClientHttpResponseRedirect(HttpResponse):
+    """
+    Not using HttpResponseRedirect -- that one checks schemes, and here
+    we might be redirecting to an app native url.
+    """
+
+    def __init__(self, redirect_uri: str):
+        super().__init__(status=HTTPStatus.FOUND)
+        self["Location"] = redirect_uri
+
+
 def _enforce_csrf(request: HttpRequest) -> HttpResponseForbidden | None:
     """
     Scenario: view is CSRF exempt, but, if this is not a client initial POST
@@ -236,13 +247,13 @@ class AuthorizationView(FormView):
             raise PermissionDenied()
         return self.form_valid(form)
 
-    def _respond_with_access_denied(self) -> HttpResponseRedirect:
+    def _respond_with_access_denied(self) -> HttpResponse:
         redirect_uri = self._request_info.get("redirect_uri")
         state = self._request_info.get("state")
         params = {"error": "access_denied"}
         if state:
             params["state"] = state
-        return HttpResponseRedirect(add_query_params(redirect_uri, params))
+        return _ClientHttpResponseRedirect(add_query_params(redirect_uri, params))
 
     def get_form_kwargs(self) -> dict[str, Any]:
         ret = super().get_form_kwargs()
@@ -549,12 +560,7 @@ class LogoutView(FormView):
                 redirect_uri = add_query_params(redirect_uri, {"state": state})
         else:
             redirect_uri = get_account_adapter().get_logout_redirect_url(self.request)
-
-        # Not using HttpResponseRedirect -- that one checks schemes, and here
-        # we might be redirecting to an app native url.
-        response = HttpResponse(status=HTTPStatus.FOUND)
-        response["Location"] = redirect_uri
-        return response
+        return _ClientHttpResponseRedirect(redirect_uri)
 
     def _must_ask(self, form: RPInitiatedLogoutForm) -> bool:
         """
