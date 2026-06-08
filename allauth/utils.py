@@ -57,7 +57,7 @@ def _generate_unique_username_base(txts: list[str | None], regex=None) -> str:
     return username or "user"
 
 
-def get_username_max_length() -> int:
+def get_username_max_length() -> int | None:
     from .account.app_settings import USER_MODEL_USERNAME_FIELD
 
     if USER_MODEL_USERNAME_FIELD is not None:
@@ -75,7 +75,9 @@ def generate_username_candidate(basename, suffix_length) -> str:
     suffix = "".join(
         random.choice(USERNAME_SUFFIX_CHARS[i]) for i in range(suffix_length)  # nosec
     )
-    return basename[0 : max_length - len(suffix)] + suffix
+    if max_length is not None:
+        return basename[0 : max_length - len(suffix)] + suffix
+    return basename + suffix
 
 
 def generate_username_candidates(basename) -> list:
@@ -86,7 +88,11 @@ def generate_username_candidates(basename) -> list:
     else:
         ret = []
     min_suffix_length = max(1, USERNAME_MIN_LENGTH - len(basename))
-    max_suffix_length = min(get_username_max_length(), MAX_USERNAME_SUFFIX_LENGTH)
+    username_max_length = get_username_max_length()
+    if username_max_length is None:
+        max_suffix_length = MAX_USERNAME_SUFFIX_LENGTH
+    else:
+        max_suffix_length = min(username_max_length, MAX_USERNAME_SUFFIX_LENGTH)
     for suffix_length in range(min_suffix_length, max_suffix_length):
         ret.append(generate_username_candidate(basename, suffix_length))
     return ret

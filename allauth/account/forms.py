@@ -278,11 +278,14 @@ class BaseSignupForm(base_signup_form_class()):  # type: ignore[misc]
         self.account_already_exists = False
         super().__init__(*args, **kwargs)
         username_field = self.fields["username"]
-        username_field.max_length = get_username_max_length()
-        username_field.validators.append(
-            validators.MaxLengthValidator(username_field.max_length)
-        )
-        username_field.widget.attrs["maxlength"] = str(username_field.max_length)
+
+        username_max_length = get_username_max_length()
+        if username_max_length is not None:
+            username_field.max_length = username_max_length
+            username_field.validators.append(
+                validators.MaxLengthValidator(username_max_length)
+            )
+            username_field.widget.attrs["maxlength"] = str(username_max_length)
 
         email2 = self._signup_fields.get("email2")
         if email2:
