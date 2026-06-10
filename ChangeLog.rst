@@ -13,6 +13,11 @@ Note worthy changes
 
 - IdP: Added support for Client ID Metadata Document (CIMD).
 
+- IdP: Added ``IDP_OIDC_REFRESH_TOKEN_EXPIRES_IN``, allowing refresh tokens to
+  expire. Combined with ``IDP_OIDC_ROTATE_REFRESH_TOKEN``, this results in a
+  sliding (inactivity) window. Defaults to ``None`` (no expiry), preserving the
+  previous behavior.
+
 
 Fixes
 -----

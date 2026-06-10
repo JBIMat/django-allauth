@@ -1,7 +1,9 @@
+from datetime import timedelta
 from http import HTTPStatus
 from unittest.mock import ANY
 
 from django.urls import reverse
+from django.utils import timezone
 
 import pytest
 
@@ -96,6 +98,66 @@ def test_refresh_token(
         "scope": "openid profile",
         "token_type": "Bearer",
     }
+
+
+@pytest.mark.parametrize(
+    "refresh_token_expires_in,expect_expiry",
+    [
+        (None, False),
+        (3600, True),
+    ],
+)
+def test_refresh_token_expiry(
+    db,
+    client,
+    oidc_client,
+    oidc_client_secret,
+    user,
+    refresh_token_factory,
+    settings,
+    refresh_token_expires_in,
+    expect_expiry,
+):
+    settings.IDP_OIDC_ROTATE_REFRESH_TOKEN = True
+    settings.IDP_OIDC_REFRESH_TOKEN_EXPIRES_IN = refresh_token_expires_in
+    rt, rt_instance = refresh_token_factory(user=user, client=oidc_client)
+    resp = client.post(
+        reverse("idp:oidc:token"),
+        {
+            "refresh_token": rt,
+            "grant_type": "refresh_token",
+            "client_id": oidc_client.id,
+            "client_secret": oidc_client_secret,
+        },
+    )
+    assert resp.status_code == HTTPStatus.OK
+    data = resp.json()
+    new_rt = Token.objects.lookup(Token.Type.REFRESH_TOKEN, data["refresh_token"])
+    if expect_expiry:
+        assert new_rt.expires_at is not None
+        expected = timezone.now() + timedelta(seconds=refresh_token_expires_in)
+        assert abs((new_rt.expires_at - expected).total_seconds()) < 30
+    else:
+        assert new_rt.expires_at is None
+
+
+def test_refresh_token_expired(
+    db, client, oidc_client, oidc_client_secret, user, refresh_token_factory
+):
+    rt, rt_instance = refresh_token_factory(user=user, client=oidc_client)
+    rt_instance.expires_at = timezone.now() - timedelta(seconds=1)
+    rt_instance.save()
+    resp = client.post(
+        reverse("idp:oidc:token"),
+        {
+            "refresh_token": rt,
+            "grant_type": "refresh_token",
+            "client_id": oidc_client.id,
+            "client_secret": oidc_client_secret,
+        },
+    )
+    assert resp.status_code == HTTPStatus.BAD_REQUEST
+    assert resp.json()["error"] == "invalid_grant"
 
 
 def test_revoke_refresh_token(

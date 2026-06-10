@@ -50,6 +50,10 @@ class AppSettings:
         return self._setting("ROTATE_REFRESH_TOKEN", True)
 
     @property
+    def REFRESH_TOKEN_EXPIRES_IN(self) -> int | None:
+        return self._setting("REFRESH_TOKEN_EXPIRES_IN", None)
+
+    @property
     def DEVICE_CODE_EXPIRES_IN(self) -> int:
         return self._setting("DEVICE_CODE_EXPIRES_IN", 300)
 

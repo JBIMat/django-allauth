@@ -52,6 +52,12 @@ Available settings:
 ``IDP_OIDC_RATE_LIMITS`` (default: ``{"device_user_code": "5/m/ip", "client_registration": "3/m/ip", "cimd_fetch": "3/m/ip"}``)
   Rate limit configuration.
 
+``IDP_OIDC_REFRESH_TOKEN_EXPIRES_IN`` (default: ``None``)
+  The time (in seconds) after which refresh tokens expire. By default
+  (``None``) refresh tokens do not expire. When combined with
+  ``IDP_OIDC_ROTATE_REFRESH_TOKEN``, a new expiry is set each time the token is
+  rotated, resulting in a sliding (inactivity) window.
+
 ``IDP_OIDC_ROTATE_REFRESH_TOKEN`` (default: ``True``)
   When access tokens are refreshed the old refresh token can be kept
   (``False``) or replaced (``True``) with a new one (rotated).

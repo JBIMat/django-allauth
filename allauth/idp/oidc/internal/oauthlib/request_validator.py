@@ -219,11 +219,17 @@ class OAuthLibRequestValidator(RequestValidator):
             rt = None
         else:
             resources = ctx.granted_resources
+        refresh_expires_in = app_settings.REFRESH_TOKEN_EXPIRES_IN
         new_rt = Token(
             client=request.client,
             user=request.user,
             type=Token.Type.REFRESH_TOKEN,
             hash=refresh_token_hash,
+            expires_at=(
+                timezone.now() + timedelta(seconds=refresh_expires_in)
+                if refresh_expires_in
+                else None
+            ),
         )
         if resources:
             new_rt.set_resources(resources)
