@@ -162,6 +162,13 @@ class OAuthLibRequestValidator(RequestValidator):
             rt = self._prep_refresh_token(ctx, refresh_token, request)
             if not rt.pk:
                 tokens.append(rt)
+            if rt.expires_at is not None:
+                # Expose the refresh token lifetime to the client. Not part of
+                # RFC 6749, but ``refresh_expires_in`` is the de-facto convention
+                # (e.g. Keycloak). Omitted when refresh tokens do not expire.
+                token["refresh_expires_in"] = max(
+                    0, int((rt.expires_at - timezone.now()).total_seconds())
+                )
         access_token = self._prep_access_token(ctx, token, request)
         tokens.append(access_token)
         for t in tokens:

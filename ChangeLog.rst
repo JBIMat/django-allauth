@@ -16,7 +16,9 @@ Note worthy changes
 - IdP: Added ``IDP_OIDC_REFRESH_TOKEN_EXPIRES_IN``, allowing refresh tokens to
   expire. Combined with ``IDP_OIDC_ROTATE_REFRESH_TOKEN``, this results in a
   sliding (inactivity) window. Defaults to ``None`` (no expiry), preserving the
-  previous behavior.
+  previous behavior. Whenever a refresh token carries an expiry, its remaining
+  lifetime is returned to the client as ``refresh_expires_in`` in the token
+  response.
 
 
 Fixes

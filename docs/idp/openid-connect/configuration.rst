@@ -53,10 +53,16 @@ Available settings:
   Rate limit configuration.
 
 ``IDP_OIDC_REFRESH_TOKEN_EXPIRES_IN`` (default: ``None``)
-  The time (in seconds) after which refresh tokens expire. By default
-  (``None``) refresh tokens do not expire. When combined with
-  ``IDP_OIDC_ROTATE_REFRESH_TOKEN``, a new expiry is set each time the token is
-  rotated, resulting in a sliding (inactivity) window.
+  Set to a positive number of seconds to make refresh tokens expire. By
+  default (``None``) refresh tokens do not expire. With
+  ``IDP_OIDC_ROTATE_REFRESH_TOKEN`` enabled, each rotation issues a fresh
+  token carrying a new expiry, resulting in a sliding (inactivity) window.
+  With rotation disabled, the refresh token -- and its original expiry -- is
+  reused as is, so the value acts as an absolute lifetime. Refresh tokens
+  issued before this setting was enabled are unaffected by it. Whenever a
+  refresh token carries an expiry, its remaining lifetime is returned to the
+  client as ``refresh_expires_in`` (seconds) in the token response. Expired
+  tokens are rejected, but not automatically purged from the database.
 
 ``IDP_OIDC_ROTATE_REFRESH_TOKEN`` (default: ``True``)
   When access tokens are refreshed the old refresh token can be kept

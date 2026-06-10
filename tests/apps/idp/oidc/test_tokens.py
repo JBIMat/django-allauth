@@ -100,13 +100,8 @@ def test_refresh_token(
     }
 
 
-@pytest.mark.parametrize(
-    "refresh_token_expires_in,expect_expiry",
-    [
-        (None, False),
-        (3600, True),
-    ],
-)
+@pytest.mark.parametrize("rotate_refresh_token", [False, True])
+@pytest.mark.parametrize("refresh_token_expires_in", [None, 3600])
 def test_refresh_token_expiry(
     db,
     client,
@@ -115,12 +110,16 @@ def test_refresh_token_expiry(
     user,
     refresh_token_factory,
     settings,
+    rotate_refresh_token,
     refresh_token_expires_in,
-    expect_expiry,
 ):
-    settings.IDP_OIDC_ROTATE_REFRESH_TOKEN = True
+    settings.IDP_OIDC_ROTATE_REFRESH_TOKEN = rotate_refresh_token
     settings.IDP_OIDC_REFRESH_TOKEN_EXPIRES_IN = refresh_token_expires_in
     rt, rt_instance = refresh_token_factory(user=user, client=oidc_client)
+    if refresh_token_expires_in is None:
+        # Tokens issued while expiry is disabled do not expire.
+        rt_instance.expires_at = None
+        rt_instance.save()
     resp = client.post(
         reverse("idp:oidc:token"),
         {
@@ -133,12 +132,54 @@ def test_refresh_token_expiry(
     assert resp.status_code == HTTPStatus.OK
     data = resp.json()
     new_rt = Token.objects.lookup(Token.Type.REFRESH_TOKEN, data["refresh_token"])
-    if expect_expiry:
-        assert new_rt.expires_at is not None
-        expected = timezone.now() + timedelta(seconds=refresh_token_expires_in)
-        assert abs((new_rt.expires_at - expected).total_seconds()) < 30
+    if rotate_refresh_token:
+        assert new_rt.pk != rt_instance.pk
+        if refresh_token_expires_in:
+            # Rotation mints a fresh token carrying a full expiry window
+            # (sliding window), exposed as ``refresh_expires_in``.
+            expected = timezone.now() + timedelta(seconds=refresh_token_expires_in)
+            assert abs((new_rt.expires_at - expected).total_seconds()) < 30
+            assert abs(data["refresh_expires_in"] - refresh_token_expires_in) < 30
+        else:
+            assert new_rt.expires_at is None
+            assert "refresh_expires_in" not in data
     else:
-        assert new_rt.expires_at is None
+        # The refresh token is reused as is: its expiry is not extended, and
+        # ``refresh_expires_in`` reflects the remaining lifetime (the factory
+        # issues tokens that expire in 60 seconds).
+        assert new_rt.pk == rt_instance.pk
+        assert new_rt.expires_at == rt_instance.expires_at
+        if refresh_token_expires_in:
+            assert 0 < data["refresh_expires_in"] <= 60
+        else:
+            assert "refresh_expires_in" not in data
+
+
+def test_refresh_token_reuse_keeps_legacy_token_unexpiring(
+    db, client, oidc_client, oidc_client_secret, user, refresh_token_factory, settings
+):
+    # Tokens issued before ``REFRESH_TOKEN_EXPIRES_IN`` was enabled are not
+    # retroactively expired when rotation is off: the token is reused as is.
+    settings.IDP_OIDC_ROTATE_REFRESH_TOKEN = False
+    settings.IDP_OIDC_REFRESH_TOKEN_EXPIRES_IN = 3600
+    rt, rt_instance = refresh_token_factory(user=user, client=oidc_client)
+    rt_instance.expires_at = None
+    rt_instance.save()
+    resp = client.post(
+        reverse("idp:oidc:token"),
+        {
+            "refresh_token": rt,
+            "grant_type": "refresh_token",
+            "client_id": oidc_client.id,
+            "client_secret": oidc_client_secret,
+        },
+    )
+    assert resp.status_code == HTTPStatus.OK
+    data = resp.json()
+    assert data["refresh_token"] == rt
+    rt_instance.refresh_from_db()
+    assert rt_instance.expires_at is None
+    assert "refresh_expires_in" not in data
 
 
 def test_refresh_token_expired(

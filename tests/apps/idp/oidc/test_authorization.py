@@ -1,9 +1,11 @@
+from datetime import timedelta
 from http import HTTPStatus
 from unittest.mock import ANY
 from urllib.parse import parse_qs, urlparse
 
 from django.test import Client
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.http import urlencode
 
 import jwt
@@ -244,6 +246,61 @@ def test_authorization_code_flow_skip_consent(
         "refresh_token",
         "id_token",
     }
+
+
+@pytest.mark.parametrize("refresh_token_expires_in", [None, 3600])
+def test_authorization_code_flow_refresh_token_expiry(
+    auth_client,
+    oidc_client,
+    oidc_client_secret,
+    enable_cache,
+    settings,
+    refresh_token_expires_in,
+):
+    # The initially issued refresh token carries the configured expiry, and
+    # the lifetime is exposed in the token response as ``refresh_expires_in``.
+    settings.IDP_OIDC_REFRESH_TOKEN_EXPIRES_IN = refresh_token_expires_in
+    oidc_client.skip_consent = True
+    oidc_client.save()
+    redirect_uri = oidc_client.get_redirect_uris()[0]
+    resp = auth_client.get(
+        reverse("idp:oidc:authorization")
+        + "?"
+        + urlencode(
+            {
+                "client_id": oidc_client.id,
+                "response_type": "code",
+                "scope": "openid",
+                "nonce": "some-nonce",
+                "state": "some-state",
+                "redirect_uri": redirect_uri,
+            }
+        )
+    )
+    assert resp.status_code == HTTPStatus.FOUND
+    code = parse_qs(urlparse(resp["location"]).query)["code"][0]
+    resp = auth_client.post(
+        reverse("idp:oidc:token"),
+        {
+            "code": code,
+            "grant_type": "authorization_code",
+            "client_id": oidc_client.id,
+            "client_secret": oidc_client_secret,
+            "redirect_uri": redirect_uri,
+        },
+    )
+    assert resp.status_code == HTTPStatus.OK
+    data = resp.json()
+    refresh_token = Token.objects.lookup(
+        Token.Type.REFRESH_TOKEN, data["refresh_token"]
+    )
+    if refresh_token_expires_in:
+        assert abs(data["refresh_expires_in"] - refresh_token_expires_in) < 30
+        expected = timezone.now() + timedelta(seconds=refresh_token_expires_in)
+        assert abs((refresh_token.expires_at - expected).total_seconds()) < 30
+    else:
+        assert "refresh_expires_in" not in data
+        assert refresh_token.expires_at is None
 
 
 def test_authorization_id_token_hint_match(

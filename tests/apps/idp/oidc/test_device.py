@@ -1,8 +1,10 @@
+from datetime import timedelta
 from http import HTTPStatus
 from unittest.mock import ANY
 
 from django.core.cache import cache
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.http import urlencode
 
 import pytest
@@ -189,6 +191,48 @@ def test_device_flow(
         assert resp.json() == {
             "error": "access_denied",
         }
+
+
+def test_device_flow_refresh_token_expiry(
+    client,
+    auth_client,
+    device_client,
+    enable_cache,
+    user,
+    poll_sleep,
+    settings,
+):
+    # The refresh token issued by the device grant carries the configured
+    # expiry, exposed in the token response as ``refresh_expires_in``.
+    settings.IDP_OIDC_REFRESH_TOKEN_EXPIRES_IN = 3600
+    resp = client.post(
+        reverse("idp:oidc:device_code"),
+        data=urlencode({"client_id": device_client.id, "scope": "openid"}),
+        content_type="application/x-www-form-urlencoded",
+    )
+    assert resp.status_code == HTTPStatus.OK
+    data = resp.json()
+    resp = auth_client.get(data["verification_uri_complete"])
+    assert resp.status_code == HTTPStatus.OK
+    resp = auth_client.post(data["verification_uri_complete"], {"action": "confirm"})
+    assert resp.status_code == HTTPStatus.OK
+    poll_sleep(data["device_code"], 10)
+    resp = client.post(
+        reverse("idp:oidc:token"),
+        {
+            "device_code": data["device_code"],
+            "grant_type": Client.GrantType.DEVICE_CODE,
+            "client_id": device_client.id,
+        },
+    )
+    assert resp.status_code == HTTPStatus.OK
+    data = resp.json()
+    assert abs(data["refresh_expires_in"] - 3600) < 30
+    refresh_token = Token.objects.lookup(
+        Token.Type.REFRESH_TOKEN, data["refresh_token"]
+    )
+    expected = timezone.now() + timedelta(seconds=3600)
+    assert abs((refresh_token.expires_at - expected).total_seconds()) < 30
 
 
 def test_slow_down_flow(client, device_client, enable_cache, poll_sleep):
