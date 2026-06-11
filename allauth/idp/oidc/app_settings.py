@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, TypeVar
 from allauth import app_settings as allauth_settings
 from allauth.core.internal.cryptokit import UserCodeFormat
 
-
 if TYPE_CHECKING:
     from datetime import datetime
 

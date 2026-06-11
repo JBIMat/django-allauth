@@ -23,7 +23,6 @@ from allauth.core.internal.cryptokit import generate_user_code
 from allauth.idp.oidc import app_settings
 from allauth.utils import import_attribute
 
-
 if TYPE_CHECKING:
     from allauth.idp.oidc.models import Client, Token
 
@@ -230,8 +229,14 @@ class DefaultOIDCAdapter(BaseAdapter):
         Returns the cache control value for the JWKS endpoint. The default implementation returns the value of the ``IDP_OIDC_JWKS_CACHE_CONTROL`` setting.
         Override this method to provide a different cache control value, e.g. in case of a secret manager / vault is used.
         """
-        if isinstance(app_settings.DECOMMISSION_PREVIOUS_KEY_AT, datetime) and timezone.now() < app_settings.DECOMMISSION_PREVIOUS_KEY_AT:
-            return int(app_settings.DECOMMISSION_PREVIOUS_KEY_AT.timestamp() - timezone.now().timestamp())
+        if (
+            isinstance(app_settings.DECOMMISSION_PREVIOUS_KEY_AT, datetime)
+            and timezone.now() < app_settings.DECOMMISSION_PREVIOUS_KEY_AT
+        ):
+            return int(
+                app_settings.DECOMMISSION_PREVIOUS_KEY_AT.timestamp()
+                - timezone.now().timestamp()
+            )
         return app_settings.JWKS_CACHE_CONTROL
 
     def get_private_keys(self) -> list[str]:
@@ -243,7 +248,10 @@ class DefaultOIDCAdapter(BaseAdapter):
         This method is used for token verification, and should return all keys that might have been used for signing tokens that are still valid.
         """
         keys = [self.get_current_private_key()]
-        if app_settings.PREVIOUS_PRIVATE_KEY and (not isinstance(app_settings.DECOMMISSION_PREVIOUS_KEY_AT, datetime) or timezone.now() < app_settings.DECOMMISSION_PREVIOUS_KEY_AT):
+        if app_settings.PREVIOUS_PRIVATE_KEY and (
+            not isinstance(app_settings.DECOMMISSION_PREVIOUS_KEY_AT, datetime)
+            or timezone.now() < app_settings.DECOMMISSION_PREVIOUS_KEY_AT
+        ):
             keys.append(app_settings.PREVIOUS_PRIVATE_KEY)
         return keys
 

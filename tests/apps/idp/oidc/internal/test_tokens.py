@@ -6,7 +6,6 @@ from allauth.core.internal import jwkkit
 from allauth.idp.oidc.internal.tokens import decode_jwt_token
 from tests.projects.common.settings import IDP_OIDC_PRIVATE_KEY
 
-
 PREVIOUS_PRIVATE_KEY = """
 -----BEGIN PRIVATE KEY-----
 MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDg1zDW72ZeMYxh

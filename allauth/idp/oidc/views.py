@@ -214,7 +214,7 @@ class AuthorizationView(FormView):
             return None
         if request.user.is_authenticated:
             return None
-        return login_required()(None)(request)  # type:ignore[misc,type-var]
+        return login_required()(None)(request)  # type: ignore[misc,type-var]
 
     def _handle_login_prompt(
         self, request: HttpRequest, prompts: list[str]
@@ -489,7 +489,9 @@ class JwksView(View):
             keys.append(jwk)
         response = JsonResponse({"keys": keys})
         response["Access-Control-Allow-Origin"] = "*"
-        response["Cache-Control"] = f"max-age={adapter.get_jwks_cache_control()}, must-revalidate"
+        response["Cache-Control"] = (
+            f"max-age={adapter.get_jwks_cache_control()}, must-revalidate"
+        )
 
         return response
 

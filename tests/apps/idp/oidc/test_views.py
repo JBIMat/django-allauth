@@ -249,7 +249,10 @@ def test_jwks_view_before_decomission(client, settings):
         resp = client.get(reverse("idp:oidc:jwks"))
     assert resp.status_code == HTTPStatus.OK
     assert resp.json() == {
-        "keys": [{"e": ANY, "key_ops": ["verify"], "kid": ANY, "kty": "RSA", "n": ANY}, {"e": ANY, "key_ops": ["verify"], "kid": ANY, "kty": "RSA", "n": ANY}]
+        "keys": [
+            {"e": ANY, "key_ops": ["verify"], "kid": ANY, "kty": "RSA", "n": ANY},
+            {"e": ANY, "key_ops": ["verify"], "kid": ANY, "kty": "RSA", "n": ANY},
+        ]
     }
     assert resp["Cache-Control"] == "max-age=90, must-revalidate"
 
