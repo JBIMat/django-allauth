@@ -12,6 +12,7 @@ Noteworthy changes
 -------------------
 
 - IdP: Added support for Client ID Metadata Document (CIMD).
+- IdP: Added key rotation support and cache control for the JWKS endpoint.
 
 - IdP: Added ``IDP_OIDC_REFRESH_TOKEN_EXPIRES_IN``, allowing refresh tokens to
   expire. Combined with ``IDP_OIDC_ROTATE_REFRESH_TOKEN``, this results in a

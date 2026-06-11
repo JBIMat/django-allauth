@@ -3,11 +3,13 @@ from __future__ import annotations
 import hashlib
 import uuid
 from collections.abc import Iterable
+from datetime import datetime
 from typing import TYPE_CHECKING, Any, Literal
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.core.management.utils import get_random_secret_key
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from allauth.account.internal.userkit import (
@@ -215,6 +217,35 @@ class DefaultOIDCAdapter(BaseAdapter):
         accepts all URLs that pass structural validation.
         """
         return True
+
+    def get_current_private_key(self) -> str:
+        """
+        Returns the private key used for signing JWTs. The default implementation returns the value of the ``IDP_OIDC_PRIVATE_KEY`` setting.
+        Override this method to provide a different key, for example if a secret manager / vault is used.
+        """
+        return app_settings.PRIVATE_KEY
+
+    def get_jwks_cache_control(self) -> int:
+        """
+        Returns the cache control value for the JWKS endpoint. The default implementation returns the value of the ``IDP_OIDC_JWKS_CACHE_CONTROL`` setting.
+        Override this method to provide a different cache control value, e.g. in case of a secret manager / vault is used.
+        """
+        if isinstance(app_settings.DECOMMISSION_PREVIOUS_KEY_AT, datetime) and timezone.now() < app_settings.DECOMMISSION_PREVIOUS_KEY_AT:
+            return int(app_settings.DECOMMISSION_PREVIOUS_KEY_AT.timestamp() - timezone.now().timestamp())
+        return app_settings.JWKS_CACHE_CONTROL
+
+    def get_private_keys(self) -> list[str]:
+        """
+        Returns a list of all private keys available. The default implementation returns a list containing the current private key,
+        and if an old private key is configured and not yet decommissioned, it is included as well.
+
+        If you want to access the active private key, use ``get_current_private_key()``.
+        This method is used for token verification, and should return all keys that might have been used for signing tokens that are still valid.
+        """
+        keys = [self.get_current_private_key()]
+        if app_settings.PREVIOUS_PRIVATE_KEY and (not isinstance(app_settings.DECOMMISSION_PREVIOUS_KEY_AT, datetime) or timezone.now() < app_settings.DECOMMISSION_PREVIOUS_KEY_AT):
+            keys.append(app_settings.PREVIOUS_PRIVATE_KEY)
+        return keys
 
 
 def get_adapter() -> DefaultOIDCAdapter:

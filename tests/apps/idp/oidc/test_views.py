@@ -1,9 +1,11 @@
 import base64
+from datetime import datetime, timedelta, timezone as dt_timezone
 from http import HTTPStatus
-from unittest.mock import ANY
+from unittest.mock import ANY, patch
 from urllib.parse import parse_qs, urlparse
 
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.http import urlencode
 
 import jwt
@@ -13,6 +15,8 @@ from pytest_django.asserts import assertTemplateUsed
 from allauth.account.models import EmailAddress
 from allauth.idp.oidc.adapter import get_adapter
 from allauth.idp.oidc.models import Token
+
+from .internal.test_tokens import PREVIOUS_PRIVATE_KEY
 
 
 @pytest.mark.parametrize(
@@ -226,12 +230,43 @@ def test_userinfo_access_token_as_query(
     assert resp.status_code == HTTPStatus.UNAUTHORIZED
 
 
-def test_jwks_view(client):
+def test_jwks_view(client, settings):
+    settings.IDP_OIDC_JWKS_CACHE_CONTROL = 4711
     resp = client.get(reverse("idp:oidc:jwks"))
     assert resp.status_code == HTTPStatus.OK
     assert resp.json() == {
         "keys": [{"e": ANY, "key_ops": ["verify"], "kid": ANY, "kty": "RSA", "n": ANY}]
     }
+    assert resp["Cache-Control"] == "max-age=4711, must-revalidate"
+
+
+def test_jwks_view_before_decomission(client, settings):
+    settings.USE_TZ = True
+    now = timezone.make_aware(datetime(2030, 1, 1, 12, 0, 0), dt_timezone.utc)
+    settings.IDP_OIDC_DECOMMISSION_PREVIOUS_KEY_AT = now + timedelta(seconds=90)
+    settings.IDP_OIDC_PREVIOUS_PRIVATE_KEY = PREVIOUS_PRIVATE_KEY
+    with patch("allauth.idp.oidc.adapter.timezone.now", return_value=now):
+        resp = client.get(reverse("idp:oidc:jwks"))
+    assert resp.status_code == HTTPStatus.OK
+    assert resp.json() == {
+        "keys": [{"e": ANY, "key_ops": ["verify"], "kid": ANY, "kty": "RSA", "n": ANY}, {"e": ANY, "key_ops": ["verify"], "kid": ANY, "kty": "RSA", "n": ANY}]
+    }
+    assert resp["Cache-Control"] == "max-age=90, must-revalidate"
+
+
+def test_jwks_view_after_decomission(client, settings):
+    settings.USE_TZ = True
+    now = timezone.make_aware(datetime(2030, 1, 1, 12, 0, 0), dt_timezone.utc)
+    settings.IDP_OIDC_DECOMMISSION_PREVIOUS_KEY_AT = now - timedelta(seconds=90)
+    settings.IDP_OIDC_PREVIOUS_PRIVATE_KEY = PREVIOUS_PRIVATE_KEY
+    settings.IDP_OIDC_JWKS_CACHE_CONTROL = 4711
+    with patch("allauth.idp.oidc.adapter.timezone.now", return_value=now):
+        resp = client.get(reverse("idp:oidc:jwks"))
+    assert resp.status_code == HTTPStatus.OK
+    assert resp.json() == {
+        "keys": [{"e": ANY, "key_ops": ["verify"], "kid": ANY, "kty": "RSA", "n": ANY}]
+    }
+    assert resp["Cache-Control"] == "max-age=4711, must-revalidate"
 
 
 @pytest.mark.parametrize("custom_userinfo_endpoint", [False, True])

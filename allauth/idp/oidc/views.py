@@ -483,11 +483,14 @@ user_info = UserInfoView.as_view()
 class JwksView(View):
     def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> JsonResponse:
         keys = []
-        for pem in [app_settings.PRIVATE_KEY]:
+        adapter = get_adapter()
+        for pem in adapter.get_private_keys():
             jwk, _ = jwkkit.load_jwk_from_pem(pem)
             keys.append(jwk)
         response = JsonResponse({"keys": keys})
         response["Access-Control-Allow-Origin"] = "*"
+        response["Cache-Control"] = f"max-age={adapter.get_jwks_cache_control()}, must-revalidate"
+
         return response
 
 

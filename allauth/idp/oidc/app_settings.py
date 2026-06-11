@@ -1,10 +1,13 @@
 from __future__ import annotations
 
-from typing import TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 from allauth import app_settings as allauth_settings
 from allauth.core.internal.cryptokit import UserCodeFormat
 
+
+if TYPE_CHECKING:
+    from datetime import datetime
 
 _T = TypeVar("_T")
 
@@ -32,6 +35,18 @@ class AppSettings:
     @property
     def PRIVATE_KEY(self) -> str:
         return self._setting("PRIVATE_KEY", "")
+
+    @property
+    def PREVIOUS_PRIVATE_KEY(self) -> str | None:
+        return self._setting("PREVIOUS_PRIVATE_KEY", None)
+
+    @property
+    def DECOMMISSION_PREVIOUS_KEY_AT(self) -> datetime | None:
+        return self._setting("DECOMMISSION_PREVIOUS_KEY_AT", None)
+
+    @property
+    def JWKS_CACHE_CONTROL(self) -> int:
+        return self._setting("JWKS_CACHE_CONTROL", 60 * 60)
 
     @property
     def ACCESS_TOKEN_EXPIRES_IN(self) -> int:
