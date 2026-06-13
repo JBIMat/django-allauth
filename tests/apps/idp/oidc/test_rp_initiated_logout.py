@@ -89,11 +89,11 @@ def test_logout_without_asking(
     oidc_client,
     id_token_generator,
     access_token_generator,
-    refresh_token_factory,
+    refresh_token_generator,
 ):
     id_token_hint = id_token_generator(oidc_client, user)
     access_token, access_token_instance = access_token_generator(oidc_client, user)
-    refresh_token, refresh_token_instance = refresh_token_factory(
+    refresh_token, refresh_token_instance = refresh_token_generator(
         user=user, client=oidc_client
     )
     settings.IDP_OIDC_RP_INITIATED_LOGOUT_ASKS_FOR_OP_LOGOUT = False

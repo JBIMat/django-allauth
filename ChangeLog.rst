@@ -20,6 +20,9 @@ Note worthy changes
   lifetime is returned to the client as ``refresh_expires_in`` in the token
   response.
 
+- IdP: Added an ``oidc_cleartokens`` management command that deletes expired
+  OpenID Connect tokens.
+
 
 Fixes
 -----

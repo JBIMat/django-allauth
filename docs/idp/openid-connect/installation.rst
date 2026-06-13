@@ -42,3 +42,13 @@ Your project ``urls.py`` should include::
         path("", include("allauth.idp.urls")),
         ...
     ]
+
+
+Maintenance
+-----------
+
+Issued tokens are stored in the database. Expired ones are never handed out, but
+they do remain as stale rows.  To purge them, periodically run the
+``oidc_cleartokens`` management command::
+
+    python manage.py oidc_cleartokens

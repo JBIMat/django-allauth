@@ -200,6 +200,9 @@ class TokenQuerySet(models.query.QuerySet["Token"]):
             Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now())
         )
 
+    def expired(self) -> TokenQuerySet:
+        return self.filter(expires_at__isnull=False, expires_at__lte=timezone.now())
+
     def by_value(self, value: str) -> TokenQuerySet:
         return self.filter(hash=get_adapter().hash_token(value))
 

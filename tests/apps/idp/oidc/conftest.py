@@ -69,7 +69,7 @@ def id_token_generator(rf):
 
 @pytest.fixture
 def access_token_generator(access_token_format, rf):
-    def f(client, user, scopes=["openid"], resources=None):
+    def f(client, user, scopes=["openid"], resources=None, expires_at=None):
         if access_token_format == "jwt":
             o_request = Request("/")
             o_request.user = user
@@ -86,6 +86,7 @@ def access_token_generator(access_token_format, rf):
             user=user,
             client=client,
             hash=token_hash,
+            expires_at=expires_at,
         )
         instance.set_scopes(scopes)
         if resources:
@@ -97,7 +98,7 @@ def access_token_generator(access_token_format, rf):
 
 
 @pytest.fixture
-def refresh_token_factory():
+def refresh_token_generator():
     def f(*, user, client, scopes=None):
         adapter = get_adapter()
         value = uuid.uuid4().hex
