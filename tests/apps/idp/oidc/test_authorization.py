@@ -304,7 +304,7 @@ def test_authorization_code_flow_refresh_token_expiry(
 
 
 def test_authorization_id_token_hint_match(
-    user, id_token_generator, oidc_client, auth_client, user_factory
+    user, id_token_factory, oidc_client, auth_client, user_factory
 ):
     redirect_uri = oidc_client.get_redirect_uris()[0]
     # Pass along ID token as hint
@@ -314,7 +314,7 @@ def test_authorization_id_token_hint_match(
         + urlencode(
             {
                 "client_id": oidc_client.id,
-                "id_token_hint": id_token_generator(oidc_client, user),
+                "id_token_hint": id_token_factory(oidc_client, user),
                 "response_type": "code",
                 "scope": "openid",
                 "nonce": "some-nonce",
@@ -327,7 +327,7 @@ def test_authorization_id_token_hint_match(
 
 
 def test_authorization_id_token_hint_mismatch(
-    user, id_token_generator, oidc_client, auth_client, user_factory
+    user, id_token_factory, oidc_client, auth_client, user_factory
 ):
     redirect_uri = oidc_client.get_redirect_uris()[0]
     # Pass along ID token as hint
@@ -337,7 +337,7 @@ def test_authorization_id_token_hint_mismatch(
         + urlencode(
             {
                 "client_id": oidc_client.id,
-                "id_token_hint": id_token_generator(oidc_client, user_factory()),
+                "id_token_hint": id_token_factory(oidc_client, user_factory()),
                 "response_type": "code",
                 "redirect_uri": redirect_uri,
                 "scope": "openid",
@@ -526,9 +526,9 @@ def test_prompt_none(
     error,
     oidc_client,
     user,
-    access_token_generator,
+    access_token_factory,
 ):
-    access_token_generator(oidc_client, user, scopes=["openid"])
+    access_token_factory(oidc_client, user, scopes=["openid"])
     client = request.getfixturevalue(client_fixture)
     redirect_uri = oidc_client.get_redirect_uris()[0]
     resp = client.get(

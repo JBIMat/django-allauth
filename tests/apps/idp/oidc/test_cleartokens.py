@@ -7,16 +7,16 @@ from allauth.idp.oidc.models import Token
 
 
 def test_cleartokens_deletes_only_expired(
-    oidc_client, user, access_token_generator, capsys
+    oidc_client, user, access_token_factory, capsys
 ):
     now = timezone.now()
-    _, expired = access_token_generator(
+    _, expired = access_token_factory(
         oidc_client, user, expires_at=now - timedelta(seconds=1)
     )
-    _, valid = access_token_generator(
+    _, valid = access_token_factory(
         oidc_client, user, expires_at=now + timedelta(hours=1)
     )
-    _, never = access_token_generator(oidc_client, user, expires_at=None)
+    _, never = access_token_factory(oidc_client, user, expires_at=None)
 
     call_command("oidc_cleartokens")
 

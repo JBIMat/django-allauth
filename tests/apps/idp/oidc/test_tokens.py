@@ -21,10 +21,10 @@ def test_userinfo_bad_token(client, oidc_client, user):
 
 
 def test_revoke_access_token(
-    client, oidc_client, oidc_client_secret, user, access_token_generator
+    client, oidc_client, oidc_client_secret, user, access_token_factory
 ):
-    token, instance = access_token_generator(oidc_client, user)
-    _, instance_to_keep = access_token_generator(oidc_client, user)
+    token, instance = access_token_factory(oidc_client, user)
+    _, instance_to_keep = access_token_factory(oidc_client, user)
     resp = client.post(
         reverse("idp:oidc:revoke"),
         data={
@@ -54,14 +54,14 @@ def test_refresh_token(
     oidc_client,
     oidc_client_secret,
     user,
-    refresh_token_generator,
+    refresh_token_factory,
     settings,
     rotate_refresh_token,
     scopes,
     resources,
 ):
     settings.IDP_OIDC_ROTATE_REFRESH_TOKEN = rotate_refresh_token
-    rt, rt_instance = refresh_token_generator(
+    rt, rt_instance = refresh_token_factory(
         user=user, client=oidc_client, scopes=scopes
     )
     rt_instance.set_scope_email("a@b.org")
@@ -202,9 +202,9 @@ def test_refresh_token_expired(
 
 
 def test_revoke_refresh_token(
-    db, client, oidc_client, oidc_client_secret, user, refresh_token_generator
+    db, client, oidc_client, oidc_client_secret, user, refresh_token_factory
 ):
-    token_value, token_instance = refresh_token_generator(user=user, client=oidc_client)
+    token_value, token_instance = refresh_token_factory(user=user, client=oidc_client)
     resp = client.post(
         reverse("idp:oidc:revoke"),
         {
@@ -238,14 +238,14 @@ def test_refresh_resource_vs_subresource(
     oidc_client,
     oidc_client_secret,
     user,
-    refresh_token_generator,
+    refresh_token_factory,
     settings,
     auth_resources,
     token_resources,
     success,
 ):
     scopes = ["openid"]
-    rt, rt_instance = refresh_token_generator(
+    rt, rt_instance = refresh_token_factory(
         user=user, client=oidc_client, scopes=scopes
     )
     rt_instance.set_scope_email("a@b.org")

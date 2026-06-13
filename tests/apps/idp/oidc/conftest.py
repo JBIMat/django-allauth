@@ -47,7 +47,7 @@ def device_client(db):
 
 
 @pytest.fixture
-def id_token_generator(rf):
+def id_token_factory(rf):
     def f(client, user):
         with request_context(rf.get("/")):
             request = Request("/")
@@ -68,7 +68,7 @@ def id_token_generator(rf):
 
 
 @pytest.fixture
-def access_token_generator(access_token_format, rf):
+def access_token_factory(access_token_format, rf):
     def f(client, user, scopes=["openid"], resources=None, expires_at=None):
         if access_token_format == "jwt":
             o_request = Request("/")
@@ -98,7 +98,7 @@ def access_token_generator(access_token_format, rf):
 
 
 @pytest.fixture
-def refresh_token_generator():
+def refresh_token_factory():
     def f(*, user, client, scopes=None):
         adapter = get_adapter()
         value = uuid.uuid4().hex

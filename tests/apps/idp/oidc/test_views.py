@@ -27,14 +27,14 @@ def test_userinfo(
     client,
     oidc_client,
     user,
-    access_token_generator,
+    access_token_factory,
     scopes,
     has_secondary_email,
     choose_secondary_email,
     email_factory,
 ):
     # Pass along ID token as hint
-    token, token_instance = access_token_generator(oidc_client, user, scopes=scopes)
+    token, token_instance = access_token_factory(oidc_client, user, scopes=scopes)
     if has_secondary_email:
         email = email_factory()
         EmailAddress.objects.create(
@@ -216,10 +216,10 @@ def test_implicit_grant_flow(auth_client, user, oidc_client, enable_cache, resou
 
 
 def test_userinfo_access_token_as_query(
-    client, oidc_client, user, access_token_generator
+    client, oidc_client, user, access_token_factory
 ):
     # Pass along ID token as hint
-    token, _ = access_token_generator(oidc_client, user, scopes=["openid"])
+    token, _ = access_token_factory(oidc_client, user, scopes=["openid"])
     resp = client.get(
         f"{reverse('idp:oidc:userinfo')}?{urlencode({'access_token': token})}",
     )
@@ -290,10 +290,10 @@ def test_post_userinfo(
     client,
     oidc_client,
     user,
-    access_token_generator,
+    access_token_factory,
 ):
     # Pass along ID token as hint
-    token, token_instance = access_token_generator(oidc_client, user)
+    token, token_instance = access_token_factory(oidc_client, user)
     resp = client.post(
         reverse("idp:oidc:userinfo"),
         HTTP_AUTHORIZATION=f"Bearer {token}",
