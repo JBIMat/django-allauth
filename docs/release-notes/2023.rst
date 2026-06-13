@@ -1,7 +1,7 @@
 0.59.0 (2023-12-13)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - The MFA authenticator model now features "created at" an "last used "at"
@@ -59,7 +59,7 @@ Fixes
 0.58.0 (2023-10-26)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - The ``SocialAccount.extra_data`` field was a custom JSON field that used
@@ -108,7 +108,7 @@ Security notice
 0.57.0 (2023-09-24)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - Added Django password validation help text to ``password1`` on
@@ -157,7 +157,7 @@ Security notice
 0.56.0 (2023-09-07)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - Added builtin support for Two-Factor Authentication via the ``allauth.mfa`` app.
@@ -259,7 +259,7 @@ Fixes
 0.55.0 (2023-08-22)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - Introduced a new setting ``ACCOUNT_PASSWORD_RESET_TOKEN_GENERATOR`` that
@@ -348,7 +348,7 @@ Backwards incompatible changes
 0.54.0 (2023-03-31)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - Dropped support for EOL Python versions (3.5, 3.6).
@@ -365,7 +365,7 @@ Security notice
 0.53.1 (2023-03-20)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - Example base template was missing ``{% load i18n %}``, fixed.
@@ -374,7 +374,7 @@ Note worthy changes
 0.53.0 (2023-03-16)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - You can now override the use of the ``UserTokenForm`` over at the

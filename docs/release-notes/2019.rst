@@ -8,7 +8,7 @@ Security notice
   <https://www.djangoproject.com/weblog/2019/dec/18/security-releases/>`_.
 
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - New providers: Exist.io., YNAB, Amazon Cognito.
@@ -29,7 +29,7 @@ Backwards incompatible changes
 0.40.0 (2019-08-29)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - The ``instagram`` provider now extracts the user's full name.
@@ -60,7 +60,7 @@ Backwards incompatible changes
 0.39.1 (2019-02-28)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - The ``linkedin_oauth2`` provider now gracefully deals with old V1
@@ -76,7 +76,7 @@ Backwards incompatible changes
 0.39.0 (2019-02-26)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - New providers: JupyterHub (OAuth2), Steam (OpenID)

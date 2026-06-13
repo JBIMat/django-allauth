@@ -1,7 +1,7 @@
 0.18.0 (2014-08-12)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - Storing social access tokens is now optional
@@ -31,7 +31,7 @@ Backwards incompatible changes
 0.17.0 (2014-06-16)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - ``sourenaraya`` contributed Mail.Ru support, thanks.
@@ -67,7 +67,7 @@ None
 0.16.1 (2014-03-12)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - Facebook login via Javascript was broken if ``auth_type`` was not
@@ -84,7 +84,7 @@ None
 0.16.0 (2014-03-10)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - Nariman Gharib contributed a Persian translation, thanks!

@@ -1,7 +1,7 @@
 0.8.3 (2012-12-06)
 ******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - Markus Thielen contributed a German translation, thanks!
@@ -39,7 +39,7 @@ Backwards incompatible changes
 0.8.2 (2012-10-10)
 ******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - Twitter: Login was broken due to change at in URLs at Twitter,
@@ -74,7 +74,7 @@ Backwards incompatible changes
 0.8.1 (2012-09-03)
 ******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - Python 2.6.2 compatibility issue, fixed.
@@ -91,7 +91,7 @@ None
 0.8.0 (2012-09-01)
 ******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - account: Dropped dependency on the emailconfirmation app,
@@ -158,7 +158,7 @@ Backwards incompatible changes
 0.7.0 (2012-07-18)
 ******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - Facebook: Facundo Gaich contributed support for dynamically
@@ -192,7 +192,7 @@ None
 0.6.0 (2012-06-20)
 ******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - account: Added ACCOUNT_USER_DISPLAY to render a user name
@@ -231,7 +231,7 @@ Backwards incompatible changes
 0.5.0 (2012-06-08)
 ******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - account: Added setting ACCOUNT_PASSWORD_MIN_LENGTH for
@@ -272,7 +272,7 @@ Backwards incompatible changes
 0.4.0 (2012-03-25)
 ******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - account: The render_value parameter of all PasswordInput fields
@@ -299,7 +299,7 @@ None
 0.3.0 (2012-01-19)
 ******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - The email authentication backend now attempts to use the

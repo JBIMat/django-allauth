@@ -1,7 +1,7 @@
 0.47.0 (2021-12-09)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - New providers: Gumroad.
@@ -34,7 +34,7 @@ Facebook account added to the account of the victim. To mitigate this,
 0.46.0 (2021-11-15)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - New providers: Gitea, MediaWiki.
@@ -48,7 +48,7 @@ Note worthy changes
 *******************
 
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - New providers: Feishu, NetIQ, Frontier, CILogin.

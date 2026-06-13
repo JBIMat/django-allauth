@@ -8,7 +8,7 @@ The ``{% user_display user %}`` tag did not escape properly. Depending on the
 username validation rules, this could lead to XSS issues.
 
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - New provider: Vimeo (OAuth2).
@@ -30,7 +30,7 @@ Backwards incompatible changes
 0.37.0 (2018-08-27)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - The Battle.net login backend now recognizes ``apac`` as a valid region.
@@ -45,7 +45,7 @@ Note worthy changes
 0.36.0 (2018-05-08)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - New providers: Telegram, QuickBooks.
@@ -67,7 +67,7 @@ Security notice
 0.35.0 (2018-02-02)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - Add support for Django 2.0
@@ -86,7 +86,7 @@ Backwards incompatible changes
 - Drop support for Django 1.8 and Django 1.10.
 
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - New provider: Azure, Microsoft Graph, Salesforce, Yahoo.

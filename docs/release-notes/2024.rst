@@ -17,7 +17,7 @@ Fixes
 65.3.0 (2024-11-30)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - Added support for TOTP code tolerance (see ``MFA_TOTP_TOLERANCE``).
@@ -33,7 +33,7 @@ Security notice
 65.2.0 (2024-11-08)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - OIDC: You can now configure whether or not PKCE is enabled per app by
@@ -69,7 +69,7 @@ Security notice
 65.1.0 (2024-10-23)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - OAuth2/OIDC: When setting up multiple apps for the same provider, you can now
@@ -132,7 +132,7 @@ Fixes
 65.0.0 (2024-09-22)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - Added transparent support for Django's ``LoginRequiredMiddleware`` (new since
@@ -186,7 +186,7 @@ Security notice
 64.2.0 (2024-08-30)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - Verifying email addresses by means of a code (instead of a link) is now supported.
@@ -208,7 +208,7 @@ Security notice
 64.1.0 (2024-08-15)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - Headless: When trying to login while a user is already logged in, you now get
@@ -230,7 +230,7 @@ Security notice
 64.0.0 (2024-07-31)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - The 0.x.y version numbers really did not do justice to the state of the
@@ -314,7 +314,7 @@ Security notice
 0.63.3 (2024-05-31)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - In ``HEADLESS_ONLY`` mode, the ``/accounts/<provider>/login/`` URLs were still
@@ -350,7 +350,7 @@ Security notice
 0.63.2 (2024-05-24)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - ``allauth.headless`` now supports the ``is_open_for_signup()`` adapter method.
@@ -372,7 +372,7 @@ Note worthy changes
 0.63.1 (2024-05-17)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - When only ``allauth.account`` was installed, you could run into an exception
@@ -395,7 +395,7 @@ Note worthy changes
 0.63.0 (2024-05-14)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - New providers: TikTok, Lichess.
@@ -423,7 +423,7 @@ Note worthy changes
 0.62.0 (2024-04-22)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - Added a dummy provider, useful for testing purposes: ``allauth.socialaccount.providers.dummy``.
@@ -501,7 +501,7 @@ Security notice
 0.61.0 (2024-02-07)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - Added support for account related security notifications. When
@@ -571,7 +571,7 @@ Backwards incompatible changes
 0.60.0 (2024-01-05)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - Google One Tap Sign-In is now supported.

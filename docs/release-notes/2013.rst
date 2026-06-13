@@ -1,7 +1,7 @@
 0.15.0 (2013-12-01)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - socialaccount: Added ``is_auto_signup_allowed`` to social account
@@ -68,7 +68,7 @@ Backwards incompatible changes
 0.14.2 (2013-11-16)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - Compatibility fix for logging in with Django 1.6.
@@ -87,7 +87,7 @@ Backwards incompatible changes
 0.14.1 (2013-10-28)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - PyPi did not render the README.rst properly.
@@ -102,7 +102,7 @@ None
 0.14.0 (2013-10-28)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - Stuart Ross contributed AngelList support, thanks!
@@ -138,7 +138,7 @@ Backwards incompatible changes
 0.13.0 (2013-08-31)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - Koichi Harakawa contributed a Japanese translation, thanks!
@@ -169,7 +169,7 @@ Backwards incompatible changes
 0.12.0 (2013-07-01)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - Added support for re-authenticated (forced prompt) by means of a
@@ -212,7 +212,7 @@ Backwards incompatible changes
 0.11.1 (2013-06-04)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - Released (due to issue in disconnecting social accounts).
@@ -226,7 +226,7 @@ None
 0.11.0 (2013-06-02)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - Moved logic whether or not a social account can be disconnected
@@ -263,7 +263,7 @@ None
 0.10.1 (2013-04-16)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - Cleaning of ``username`` can now be overridden via
@@ -285,7 +285,7 @@ None
 0.10.0 (2013-04-12)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - Chris Davis contributed Vimeo support, thanks!
@@ -384,7 +384,7 @@ Backwards incompatible changes
 0.9.0 (2013-01-30)
 ******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - account: ``user_signed_up`` signal now emits an optional

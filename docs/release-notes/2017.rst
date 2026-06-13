@@ -10,7 +10,7 @@ Security notice
   gained control over the victim's session.
 
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - New provider: Meetup.
@@ -19,7 +19,7 @@ Note worthy changes
 0.33.0 (2017-08-20)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - Security: password reset tokens are now prevented from being leaked through
@@ -41,7 +41,7 @@ Backwards incompatible changes
 0.32.0 (2017-04-27)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - Improved AJAX support: the account management views (change/set password,
@@ -77,7 +77,7 @@ Backwards incompatible changes
 0.31.0 (2017-02-28)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - Added a new ``user_logged_out`` signal.
@@ -104,7 +104,7 @@ Backwards incompatible changes
 0.30.0 (2017-01-01)
 *******************
 
-Note worthy changes
+Noteworthy changes
 -------------------
 
 - Changed the algorithm that generates unique usernames. Previously, in case the
