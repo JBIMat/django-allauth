@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import ipaddress
 import json
 from urllib.parse import parse_qs, quote, urlencode, urlparse, urlunparse
@@ -225,3 +226,18 @@ def authenticated_user(request: HttpRequest) -> AbstractBaseUser:
     if not user.is_authenticated:
         raise PermissionDenied
     return user
+
+
+def extract_basic_auth(headers: dict) -> tuple[str | None, str | None]:
+    auth = headers.get("Authorization", "")
+    scheme, _, credentials = auth.partition(" ")
+    if scheme.lower() != "basic" or not credentials:
+        return None, None
+    try:
+        decoded = base64.b64decode(credentials).decode("utf-8")
+    except (ValueError, UnicodeDecodeError):
+        return None, None
+    client_id, _, client_secret = decoded.partition(":")
+    if not client_id or not client_secret:
+        return None, None
+    return client_id, client_secret

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import base64
 import uuid
 from datetime import timedelta
 from typing import Any
@@ -12,7 +11,7 @@ from oauthlib.common import Request
 from oauthlib.openid import RequestValidator
 
 from allauth.core import context
-from allauth.core.internal import jwkkit
+from allauth.core.internal import httpkit, jwkkit
 from allauth.idp.oidc import app_settings
 from allauth.idp.oidc.adapter import get_adapter
 from allauth.idp.oidc.internal.clientkit import (
@@ -87,22 +86,8 @@ class OAuthLibRequestValidator(RequestValidator):
         self._use_client(request, client)
         return True
 
-    def _extract_basic_auth(self, request: Request) -> tuple[str | None, str | None]:
-        auth = request.headers.get("Authorization", "")
-        scheme, _, credentials = auth.partition(" ")
-        if scheme.lower() != "basic" or not credentials:
-            return None, None
-        try:
-            decoded = base64.b64decode(credentials).decode("utf-8")
-        except (ValueError, UnicodeDecodeError):
-            return None, None
-        client_id, _, client_secret = decoded.partition(":")
-        if not client_id or not client_secret:
-            return None, None
-        return client_id, client_secret
-
     def authenticate_client(self, request: Request, *args, **kwargs) -> bool:
-        client_id, client_secret = self._extract_basic_auth(request)
+        client_id, client_secret = httpkit.extract_basic_auth(request.headers)
         if not client_id and not client_secret:
             client_id = getattr(request, "client_id", None)
             client_secret = getattr(request, "client_secret", None)
