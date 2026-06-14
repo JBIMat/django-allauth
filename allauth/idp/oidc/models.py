@@ -55,6 +55,14 @@ class Client(models.Model):
         CONFIDENTIAL = "confidential", _("Confidential")
         PUBLIC = "public", _("Public")
 
+    class AuthenticationMethod(models.TextChoices):
+        # token_endpoint_auth_method values this server supports (the IANA
+        # registry is open-ended; only add a value once the token endpoint
+        # actually honors it).
+        NONE = "none", _("None")
+        CLIENT_SECRET_BASIC = "client_secret_basic", _("Client secret basic")
+        CLIENT_SECRET_POST = "client_secret_post", _("Client secret post")
+
     id = models.CharField(
         primary_key=True,
         max_length=100,

@@ -118,9 +118,9 @@ class ConfigurationView(View):
             ),
             "token_endpoint": build_absolute_uri(request, reverse("idp:oidc:token")),
             "token_endpoint_auth_methods_supported": [
-                "none",
-                "client_secret_basic",
-                "client_secret_post",
+                Client.AuthenticationMethod.NONE,
+                Client.AuthenticationMethod.CLIENT_SECRET_BASIC,
+                Client.AuthenticationMethod.CLIENT_SECRET_POST,
             ],
             "userinfo_endpoint": userinfo_endpoint,
             "subject_types_supported": ["public"],

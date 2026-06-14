@@ -251,8 +251,14 @@ class ClientRegistrationForm(forms.Form):
         # denoting the HTTP Basic authentication scheme as specified in Section
         # 2.3.1 of OAuth 2.0
         value = (
-            self.cleaned_data.get("token_endpoint_auth_method") or "client_secret_basic"
+            self.cleaned_data.get("token_endpoint_auth_method")
+            or Client.AuthenticationMethod.CLIENT_SECRET_BASIC
         )
+        valid = {am.value for am in Client.AuthenticationMethod}
+        if value not in valid:
+            raise forms.ValidationError(
+                f"Unsupported token endpoint auth method: {value}"
+            )
         return value
 
     def save(self, commit: bool = True) -> Client:
@@ -261,7 +267,8 @@ class ClientRegistrationForm(forms.Form):
             "name": data["client_name"],
             "type": (
                 Client.Type.PUBLIC
-                if data["token_endpoint_auth_method"] == "none"
+                if data["token_endpoint_auth_method"]
+                == Client.AuthenticationMethod.NONE
                 else Client.Type.CONFIDENTIAL
             ),
         }
