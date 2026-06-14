@@ -484,8 +484,13 @@ class JwksView(View):
     def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> JsonResponse:
         keys = []
         adapter = get_adapter()
-        for pem in adapter.get_private_keys():
-            jwk, _ = jwkkit.load_jwk_from_pem(pem)
+        # Deliberately not filtering on ``did_activate``: keys whose
+        # ``not_before`` still lies in the future are published ahead of time.
+        # That way clients have already fetched and cached the next key before
+        # it starts signing, avoiding a window where a freshly activated key
+        # signs tokens that verifiers cannot yet validate.
+        for key in adapter.list_private_keys(is_active=True):
+            jwk, _ = jwkkit.load_jwk_from_pem(key.pem)
             keys.append(jwk)
         response = JsonResponse({"keys": keys})
         response["Access-Control-Allow-Origin"] = "*"

@@ -1,5 +1,5 @@
 import base64
-from datetime import datetime, timedelta, timezone as dt_timezone
+from datetime import timedelta
 from http import HTTPStatus
 from unittest.mock import ANY, patch
 from urllib.parse import parse_qs, urlparse
@@ -240,36 +240,40 @@ def test_jwks_view(client, settings):
     assert resp["Cache-Control"] == "max-age=4711, must-revalidate"
 
 
-def test_jwks_view_before_decomission(client, settings):
+@pytest.mark.parametrize("expires_in,key_count", [(-60, 1), (60, 2)])
+def test_jwks_view_skips_expired_keys(client, settings, key_count, expires_in):
     settings.USE_TZ = True
-    now = timezone.make_aware(datetime(2030, 1, 1, 12, 0, 0), dt_timezone.utc)
-    settings.IDP_OIDC_DECOMMISSION_PREVIOUS_KEY_AT = now + timedelta(seconds=90)
-    settings.IDP_OIDC_PREVIOUS_PRIVATE_KEY = PREVIOUS_PRIVATE_KEY
-    with patch("allauth.idp.oidc.adapter.timezone.now", return_value=now):
-        resp = client.get(reverse("idp:oidc:jwks"))
-    assert resp.status_code == HTTPStatus.OK
-    assert resp.json() == {
-        "keys": [
-            {"e": ANY, "key_ops": ["verify"], "kid": ANY, "kty": "RSA", "n": ANY},
-            {"e": ANY, "key_ops": ["verify"], "kid": ANY, "kty": "RSA", "n": ANY},
-        ]
-    }
-    assert resp["Cache-Control"] == "max-age=90, must-revalidate"
-
-
-def test_jwks_view_after_decomission(client, settings):
-    settings.USE_TZ = True
-    now = timezone.make_aware(datetime(2030, 1, 1, 12, 0, 0), dt_timezone.utc)
-    settings.IDP_OIDC_DECOMMISSION_PREVIOUS_KEY_AT = now - timedelta(seconds=90)
-    settings.IDP_OIDC_PREVIOUS_PRIVATE_KEY = PREVIOUS_PRIVATE_KEY
-    settings.IDP_OIDC_JWKS_CACHE_CONTROL = 4711
-    with patch("allauth.idp.oidc.adapter.timezone.now", return_value=now):
-        resp = client.get(reverse("idp:oidc:jwks"))
+    settings.IDP_OIDC_PRIVATE_KEYS = [
+        {
+            "pem": PREVIOUS_PRIVATE_KEY,
+            "expires_at": timezone.now() + timedelta(seconds=expires_in),
+        }
+    ]
+    resp = client.get(reverse("idp:oidc:jwks"))
     assert resp.status_code == HTTPStatus.OK
     assert resp.json() == {
         "keys": [{"e": ANY, "key_ops": ["verify"], "kid": ANY, "kty": "RSA", "n": ANY}]
+        * key_count,
     }
-    assert resp["Cache-Control"] == "max-age=4711, must-revalidate"
+
+
+@pytest.mark.parametrize("expires_in,expected_max_age", [(90, 90), (10000, 4711)])
+def test_jwks_view_clamps_cache_control(client, settings, expires_in, expected_max_age):
+    settings.USE_TZ = True
+    settings.IDP_OIDC_JWKS_CACHE_CONTROL = 4711
+    now = timezone.now()
+    settings.IDP_OIDC_PRIVATE_KEYS = [
+        {
+            "pem": PREVIOUS_PRIVATE_KEY,
+            "expires_at": now + timedelta(seconds=expires_in),
+        }
+    ]
+    # Pin the adapter's clock so the clamp is exact; an expiry sooner than the
+    # configured max-age must shorten it, a later one must leave it untouched.
+    with patch("allauth.idp.oidc.adapter.timezone.now", return_value=now):
+        resp = client.get(reverse("idp:oidc:jwks"))
+    assert resp.status_code == HTTPStatus.OK
+    assert resp["Cache-Control"] == f"max-age={expected_max_age}, must-revalidate"
 
 
 @pytest.mark.parametrize("custom_userinfo_endpoint", [False, True])

@@ -53,7 +53,7 @@ def generate_jwt_access_token(request: Request) -> str:
     adapter.populate_access_token(
         access_token, user=request.user, client=request.client, scopes=request.scopes
     )
-    jwk_dict, private_key = jwkkit.load_jwk_from_pem(adapter.get_current_private_key())
+    jwk_dict, private_key = jwkkit.load_jwk_from_pem(adapter.get_signing_key().pem)
     return jwt.encode(
         access_token, private_key, algorithm="RS256", headers={"kid": jwk_dict["kid"]}
     )

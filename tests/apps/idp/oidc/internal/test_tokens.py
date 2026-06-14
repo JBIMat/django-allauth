@@ -4,7 +4,9 @@ import jwt
 
 from allauth.core.internal import jwkkit
 from allauth.idp.oidc.internal.tokens import decode_jwt_token
+from allauth.idp.oidc.models import PrivateKey
 from tests.projects.common.settings import IDP_OIDC_PRIVATE_KEY
+
 
 PREVIOUS_PRIVATE_KEY = """
 -----BEGIN PRIVATE KEY-----
@@ -58,9 +60,9 @@ def test_decode_jwt_token_without_kid_header():
 def test_decode_jwt_token_with_PREVIOUS_PRIVATE_KEY_still_valid():
     token = _generate_token(PREVIOUS_PRIVATE_KEY, with_kid=True)
     with patch("allauth.idp.oidc.internal.tokens.get_adapter") as mock_get_adapter:
-        mock_get_adapter.return_value.get_private_keys.return_value = [
-            IDP_OIDC_PRIVATE_KEY,
-            PREVIOUS_PRIVATE_KEY,
+        mock_get_adapter.return_value.list_private_keys.return_value = [
+            PrivateKey(pem=IDP_OIDC_PRIVATE_KEY),
+            PrivateKey(pem=PREVIOUS_PRIVATE_KEY),
         ]
         payload = decode_jwt_token(
             token, verify_exp=False, verify_iss=False, client_id=None
@@ -72,8 +74,8 @@ def test_decode_jwt_token_with_PREVIOUS_PRIVATE_KEY_still_valid():
 def test_decode_jwt_token_with_PREVIOUS_PRIVATE_KEY_expired():
     token = _generate_token(PREVIOUS_PRIVATE_KEY, with_kid=True)
     with patch("allauth.idp.oidc.internal.tokens.get_adapter") as mock_get_adapter:
-        mock_get_adapter.return_value.get_private_keys.return_value = [
-            IDP_OIDC_PRIVATE_KEY,
+        mock_get_adapter.return_value.list_private_keys.return_value = [
+            PrivateKey(pem=IDP_OIDC_PRIVATE_KEY),
         ]
         payload = decode_jwt_token(
             token, verify_exp=False, verify_iss=False, client_id=None
@@ -84,9 +86,9 @@ def test_decode_jwt_token_with_PREVIOUS_PRIVATE_KEY_expired():
 def test_decode_jwt_token_with_current_private_key():
     token = _generate_token(IDP_OIDC_PRIVATE_KEY, with_kid=True)
     with patch("allauth.idp.oidc.internal.tokens.get_adapter") as mock_get_adapter:
-        mock_get_adapter.return_value.get_private_keys.return_value = [
-            IDP_OIDC_PRIVATE_KEY,
-            PREVIOUS_PRIVATE_KEY,
+        mock_get_adapter.return_value.list_private_keys.return_value = [
+            PrivateKey(pem=IDP_OIDC_PRIVATE_KEY),
+            PrivateKey(pem=PREVIOUS_PRIVATE_KEY),
         ]
         payload = decode_jwt_token(
             token, verify_exp=False, verify_iss=False, client_id=None

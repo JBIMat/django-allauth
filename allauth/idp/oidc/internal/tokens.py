@@ -20,8 +20,8 @@ def decode_jwt_token(
             return None
 
         adapter = get_adapter()
-        for key in adapter.get_private_keys():
-            jwk_dict, private_key = jwkkit.load_jwk_from_pem(key)
+        for key in adapter.list_private_keys(is_active=True):
+            jwk_dict, private_key = jwkkit.load_jwk_from_pem(key.pem)
             if jwk_dict["kid"] == headers["kid"]:
                 break
         else:

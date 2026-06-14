@@ -3,11 +3,11 @@ from __future__ import annotations
 import hashlib
 import uuid
 from collections.abc import Iterable
-from datetime import datetime
 from typing import TYPE_CHECKING, Any, Literal
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.base_user import AbstractBaseUser
+from django.core.exceptions import ImproperlyConfigured
 from django.core.management.utils import get_random_secret_key
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -21,10 +21,12 @@ from allauth.account.models import EmailAddress
 from allauth.core.internal.adapter import BaseAdapter
 from allauth.core.internal.cryptokit import generate_user_code
 from allauth.idp.oidc import app_settings
+from allauth.idp.oidc.internal.private_keys import filter_keys, pick_signing_key
 from allauth.utils import import_attribute
 
+
 if TYPE_CHECKING:
-    from allauth.idp.oidc.models import Client, Token
+    from allauth.idp.oidc.models import Client, PrivateKey, Token
 
 
 class DefaultOIDCAdapter(BaseAdapter):
@@ -217,43 +219,55 @@ class DefaultOIDCAdapter(BaseAdapter):
         """
         return True
 
-    def get_current_private_key(self) -> str:
-        """
-        Returns the private key used for signing JWTs. The default implementation returns the value of the ``IDP_OIDC_PRIVATE_KEY`` setting.
-        Override this method to provide a different key, for example if a secret manager / vault is used.
-        """
-        return app_settings.PRIVATE_KEY
-
     def get_jwks_cache_control(self) -> int:
         """
-        Returns the cache control value for the JWKS endpoint. The default implementation returns the value of the ``IDP_OIDC_JWKS_CACHE_CONTROL`` setting.
-        Override this method to provide a different cache control value, e.g. in case of a secret manager / vault is used.
+        Returns the cache control value for the JWKS endpoint. The default
+        implementation returns the value of the ``IDP_OIDC_JWKS_CACHE_CONTROL``
+        setting, clamped so that clients refetch before the next key drops out
+        of the key set (i.e. before the soonest ``expires_at``).  Override this
+        method to provide a different cache control value, e.g. in case of a
+        secret manager / vault is used.
         """
-        if (
-            isinstance(app_settings.DECOMMISSION_PREVIOUS_KEY_AT, datetime)
-            and timezone.now() < app_settings.DECOMMISSION_PREVIOUS_KEY_AT
-        ):
-            return int(
-                app_settings.DECOMMISSION_PREVIOUS_KEY_AT.timestamp()
-                - timezone.now().timestamp()
-            )
-        return app_settings.JWKS_CACHE_CONTROL
+        cache_control = app_settings.JWKS_CACHE_CONTROL
+        now = timezone.now()
+        # Clamp against the same key set that is actually published (so a custom
+        # ``list_private_keys()`` override cannot diverge from the cache window).
+        for key in self.list_private_keys(is_active=True):
+            if key.expires_at is not None:
+                cache_control = min(
+                    cache_control, int((key.expires_at - now).total_seconds())
+                )
+        return max(0, cache_control)
 
-    def get_private_keys(self) -> list[str]:
+    def list_private_keys(
+        self,
+        *,
+        did_activate: Literal[True] | None = None,
+        is_active: Literal[True] | None = None,
+    ) -> list[PrivateKey]:
         """
-        Returns a list of all private keys available. The default implementation returns a list containing the current private key,
-        and if an old private key is configured and not yet decommissioned, it is included as well.
+        Returns the configured private keys, optionally filtered.  Pass
+        ``did_activate=True`` to exclude keys whose ``not_before`` lies in the
+        future, and/or ``is_active=True`` to exclude keys past their
+        ``expires_at``.  Used both for token verification and for serving
+        ``.well-known/jwks.json``.
+        """
+        return filter_keys(
+            app_settings.PRIVATE_KEYS, did_activate=did_activate, is_active=is_active
+        )
 
-        If you want to access the active private key, use ``get_current_private_key()``.
-        This method is used for token verification, and should return all keys that might have been used for signing tokens that are still valid.
+    def get_signing_key(self) -> PrivateKey:
         """
-        keys = [self.get_current_private_key()]
-        if app_settings.PREVIOUS_PRIVATE_KEY and (
-            not isinstance(app_settings.DECOMMISSION_PREVIOUS_KEY_AT, datetime)
-            or timezone.now() < app_settings.DECOMMISSION_PREVIOUS_KEY_AT
-        ):
-            keys.append(app_settings.PREVIOUS_PRIVATE_KEY)
-        return keys
+        Returns the private key used for signing new tokens: the most recently
+        issued key that has activated and not yet expired.  Raises
+        ``ImproperlyConfigured`` if no such key is found.
+        """
+        key = pick_signing_key(
+            self.list_private_keys(did_activate=True, is_active=True)
+        )
+        if key is None:
+            raise ImproperlyConfigured("No active private key.")
+        return key
 
 
 def get_adapter() -> DefaultOIDCAdapter:
