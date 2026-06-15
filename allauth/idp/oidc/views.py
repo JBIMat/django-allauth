@@ -214,7 +214,7 @@ class AuthorizationView(FormView):
             return None
         if request.user.is_authenticated:
             return None
-        return login_required()(None)(request)  # type:ignore[misc,type-var]
+        return login_required()(None)(request)  # type: ignore[misc,type-var]
 
     def _handle_login_prompt(
         self, request: HttpRequest, prompts: list[str]
@@ -483,11 +483,21 @@ user_info = UserInfoView.as_view()
 class JwksView(View):
     def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> JsonResponse:
         keys = []
-        for pem in [app_settings.PRIVATE_KEY]:
-            jwk, _ = jwkkit.load_jwk_from_pem(pem)
+        adapter = get_adapter()
+        # Deliberately not filtering on ``did_activate``: keys whose
+        # ``not_before`` still lies in the future are published ahead of time.
+        # That way clients have already fetched and cached the next key before
+        # it starts signing, avoiding a window where a freshly activated key
+        # signs tokens that verifiers cannot yet validate.
+        for key in adapter.list_private_keys(is_active=True):
+            jwk, _ = jwkkit.load_jwk_from_pem(key.pem)
             keys.append(jwk)
         response = JsonResponse({"keys": keys})
         response["Access-Control-Allow-Origin"] = "*"
+        response["Cache-Control"] = (
+            f"max-age={adapter.get_jwks_cache_control()}, must-revalidate"
+        )
+
         return response
 
 

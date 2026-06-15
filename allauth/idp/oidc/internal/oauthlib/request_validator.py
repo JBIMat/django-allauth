@@ -323,7 +323,7 @@ class OAuthLibRequestValidator(RequestValidator):
             )
         )
         adapter.populate_id_token(id_token, request.client, request.scopes)
-        jwk_dict, private_key = jwkkit.load_jwk_from_pem(app_settings.PRIVATE_KEY)
+        jwk_dict, private_key = jwkkit.load_jwk_from_pem(adapter.get_signing_key().pem)
         return jwt.encode(
             id_token, private_key, algorithm="RS256", headers={"kid": jwk_dict["kid"]}
         )

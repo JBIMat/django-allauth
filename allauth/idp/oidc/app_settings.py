@@ -1,10 +1,16 @@
 from __future__ import annotations
 
-from typing import TypeVar
+from datetime import datetime, timezone as dt_timezone
+from typing import TYPE_CHECKING, Any, TypeVar
+
+from django.core.exceptions import ImproperlyConfigured
 
 from allauth import app_settings as allauth_settings
 from allauth.core.internal.cryptokit import UserCodeFormat
 
+
+if TYPE_CHECKING:
+    from allauth.idp.oidc.models import PrivateKey
 
 _T = TypeVar("_T")
 
@@ -32,6 +38,49 @@ class AppSettings:
     @property
     def PRIVATE_KEY(self) -> str:
         return self._setting("PRIVATE_KEY", "")
+
+    @property
+    def PRIVATE_KEYS(self) -> list[PrivateKey]:
+        from allauth.idp.oidc.models import PrivateKey
+
+        ret: list[PrivateKey] = []
+        keys: Any = self._setting("PRIVATE_KEYS", [])
+        if not isinstance(keys, (list, tuple)):
+            raise ImproperlyConfigured("IDP_OIDC_PRIVATE_KEYS: must be a list")
+        pem1 = self._setting("PRIVATE_KEY", "")
+        seen_pems: set[str] = set()
+        for key in keys:
+            if not isinstance(key, dict):
+                raise ImproperlyConfigured(
+                    "IDP_OIDC_PRIVATE_KEYS: each entry must be a dict"
+                )
+            pem = key.get("pem")
+            if not isinstance(pem, str):
+                raise ImproperlyConfigured(
+                    "IDP_OIDC_PRIVATE_KEYS: 'pem' must be a string"
+                )
+            if pem in seen_pems:
+                raise ImproperlyConfigured("IDP_OIDC_PRIVATE_KEYS: duplicate 'pem'")
+            seen_pems.add(pem)
+            ret.append(
+                PrivateKey(
+                    pem=pem,
+                    not_before=self._parse_datetime(
+                        "not_before", key.get("not_before")
+                    ),
+                    expires_at=self._parse_datetime(
+                        "expires_at", key.get("expires_at")
+                    ),
+                    issued_at=self._parse_datetime("issued_at", key.get("issued_at")),
+                )
+            )
+        if pem1 and pem1 not in seen_pems:
+            ret.append(PrivateKey(pem=pem1))
+        return ret
+
+    @property
+    def JWKS_CACHE_CONTROL(self) -> int:
+        return self._setting("JWKS_CACHE_CONTROL", 60 * 60)
 
     @property
     def ACCESS_TOKEN_EXPIRES_IN(self) -> int:
@@ -134,6 +183,26 @@ class AppSettings:
         CIMD cache duration, in seconds.
         """
         return self._setting("CIMD_CACHE_TIMEOUT", 60 * 60)
+
+    @staticmethod
+    def _parse_datetime(field: str, value: Any) -> datetime | None:
+        if value is None:
+            return None
+        dt: datetime | None = None
+        if isinstance(value, str):
+            try:
+                dt = datetime.fromisoformat(value)
+            except ValueError:
+                pass
+        elif isinstance(value, datetime):
+            dt = value
+        if dt is None:
+            raise ImproperlyConfigured(
+                f"IDP_OIDC_PRIVATE_KEYS: {field!r} is not a valid datetime: {value!r}"
+            )
+        if dt.tzinfo is None:
+            return dt.replace(tzinfo=dt_timezone.utc)
+        return dt.astimezone(dt_timezone.utc)
 
 
 _app_settings = AppSettings("IDP_OIDC_")

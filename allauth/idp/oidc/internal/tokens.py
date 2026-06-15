@@ -5,7 +5,6 @@ from typing import Any
 import jwt
 
 from allauth.core.internal import jwkkit
-from allauth.idp.oidc import app_settings
 from allauth.idp.oidc.adapter import get_adapter
 
 
@@ -15,13 +14,25 @@ def decode_jwt_token(
     if not value:
         return None
     try:
-        jwk_dict, private_key = jwkkit.load_jwk_from_pem(app_settings.PRIVATE_KEY)
+        headers = jwt.get_unverified_header(value)
+
+        if "kid" not in headers:
+            return None
+
+        adapter = get_adapter()
+        for key in adapter.list_private_keys(is_active=True):
+            jwk_dict, private_key = jwkkit.load_jwk_from_pem(key.pem)
+            if jwk_dict["kid"] == headers["kid"]:
+                break
+        else:
+            return None
+
         issuer: str | None = None
         audience: str | None = None
         if client_id:
             audience = client_id
         if verify_iss:
-            issuer = get_adapter().get_issuer()
+            issuer = adapter.get_issuer()
         return jwt.decode(
             value,
             key=private_key.public_key(),

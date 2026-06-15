@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from dataclasses import dataclass
+from datetime import datetime
 
 from django.conf import settings
 from django.contrib.auth.hashers import check_password, make_password
@@ -290,3 +292,11 @@ class Token(models.Model):
         if not isinstance(self.data, dict):
             raise ValueError
         self.data["resources"] = list(resources)
+
+
+@dataclass(frozen=True, kw_only=True)
+class PrivateKey:
+    not_before: datetime | None = None
+    expires_at: datetime | None = None
+    issued_at: datetime | None = None
+    pem: str

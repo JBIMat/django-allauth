@@ -23,6 +23,9 @@ Noteworthy changes
 - IdP: Added an ``oidc_cleartokens`` management command that deletes expired
   OpenID Connect tokens.
 
+- IdP: Added key rotation support via ``IDP_OIDC_PRIVATE_KEYS``, as well as
+  cache control for the JWKS endpoint.
+
 
 Fixes
 -----

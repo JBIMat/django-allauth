@@ -7,7 +7,9 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.base_user import AbstractBaseUser
+from django.core.exceptions import ImproperlyConfigured
 from django.core.management.utils import get_random_secret_key
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from allauth.account.internal.userkit import (
@@ -19,11 +21,12 @@ from allauth.account.models import EmailAddress
 from allauth.core.internal.adapter import BaseAdapter
 from allauth.core.internal.cryptokit import generate_user_code
 from allauth.idp.oidc import app_settings
+from allauth.idp.oidc.internal.private_keys import filter_keys, pick_signing_key
 from allauth.utils import import_attribute
 
 
 if TYPE_CHECKING:
-    from allauth.idp.oidc.models import Client, Token
+    from allauth.idp.oidc.models import Client, PrivateKey, Token
 
 
 class DefaultOIDCAdapter(BaseAdapter):
@@ -215,6 +218,56 @@ class DefaultOIDCAdapter(BaseAdapter):
         accepts all URLs that pass structural validation.
         """
         return True
+
+    def get_jwks_cache_control(self) -> int:
+        """
+        Returns the cache control value for the JWKS endpoint. The default
+        implementation returns the value of the ``IDP_OIDC_JWKS_CACHE_CONTROL``
+        setting, clamped so that clients refetch before the next key drops out
+        of the key set (i.e. before the soonest ``expires_at``).  Override this
+        method to provide a different cache control value, e.g. in case of a
+        secret manager / vault is used.
+        """
+        cache_control = app_settings.JWKS_CACHE_CONTROL
+        now = timezone.now()
+        # Clamp against the same key set that is actually published (so a custom
+        # ``list_private_keys()`` override cannot diverge from the cache window).
+        for key in self.list_private_keys(is_active=True):
+            if key.expires_at is not None:
+                cache_control = min(
+                    cache_control, int((key.expires_at - now).total_seconds())
+                )
+        return max(0, cache_control)
+
+    def list_private_keys(
+        self,
+        *,
+        did_activate: Literal[True] | None = None,
+        is_active: Literal[True] | None = None,
+    ) -> list[PrivateKey]:
+        """
+        Returns the configured private keys, optionally filtered.  Pass
+        ``did_activate=True`` to exclude keys whose ``not_before`` lies in the
+        future, and/or ``is_active=True`` to exclude keys past their
+        ``expires_at``.  Used both for token verification and for serving
+        ``.well-known/jwks.json``.
+        """
+        return filter_keys(
+            app_settings.PRIVATE_KEYS, did_activate=did_activate, is_active=is_active
+        )
+
+    def get_signing_key(self) -> PrivateKey:
+        """
+        Returns the private key used for signing new tokens: the most recently
+        issued key that has activated and not yet expired.  Raises
+        ``ImproperlyConfigured`` if no such key is found.
+        """
+        key = pick_signing_key(
+            self.list_private_keys(did_activate=True, is_active=True)
+        )
+        if key is None:
+            raise ImproperlyConfigured("No active private key.")
+        return key
 
 
 def get_adapter() -> DefaultOIDCAdapter:

@@ -47,7 +47,53 @@ Available settings:
   Controls the format of the user code.
 
 ``IDP_OIDC_PRIVATE_KEY`` (default: ``""``)
-  The private key used for creating ID tokens (and ``.well-known/jwks.json``).
+  A string containing the PEM-encoded private key used for signing ID tokens and
+  JWT access tokens (and for serving ``.well-known/jwks.json``). This is the
+  simplest way to configure a single signing key. For key rotation, use
+  ``IDP_OIDC_PRIVATE_KEYS`` instead.
+
+``IDP_OIDC_PRIVATE_KEYS`` (default: ``[]``)
+  A list of private keys, used to support key rotation. Each entry is a
+  dictionary describing a single key::
+
+      IDP_OIDC_PRIVATE_KEYS = [
+          {
+              "pem": "-----BEGIN PRIVATE KEY-----\n...",
+              "not_before": "2026-01-01T00:00:00+00:00",
+              "expires_at": "2026-04-01T00:00:00+00:00",
+              "issued_at": "2025-12-01T00:00:00+00:00",
+          },
+          ...
+      ]
+
+  The ``pem`` field (the PEM-encoded private key) is required. The
+  ``not_before``, ``expires_at`` and ``issued_at`` fields are optional and may
+  be passed either as ISO 8601 strings or as ``datetime`` objects (naive
+  datetimes are interpreted as UTC).
+
+  A key is published in ``.well-known/jwks.json`` and trusted for verifying
+  tokens from the moment it is configured until its ``expires_at`` is reached
+  (``not_before`` does not affect this -- keys are pre-published so clients can
+  pick them up ahead of time). New tokens are always signed with the most
+  recently *issued* key (``issued_at``, falling back to ``not_before``) that has
+  activated and not yet expired.
+
+  To rotate, add the new key with a later ``issued_at`` than the incumbent;
+  signing switches to it automatically. Set an ``expires_at`` on the previous
+  key far enough in the future that every token it signed has expired (and the
+  JWKS cache window has elapsed) before it is removed. Until then the old key
+  remains verify-only.
+
+  Any key configured via ``IDP_OIDC_PRIVATE_KEY`` is automatically included in
+  this list (without ``issued_at``), so it is treated as the oldest key and any
+  dated key in ``IDP_OIDC_PRIVATE_KEYS`` takes over signing.
+
+``IDP_OIDC_JWKS_CACHE_CONTROL`` (default: 3600)
+  Controls the cache control max age (in seconds) of the ``.well-known/jwks.json``
+  response. The value is automatically clamped so that it never exceeds the time
+  until the next key drops out of the key set (the soonest ``expires_at``),
+  ensuring clients refetch before a key they may still rely on is removed.
+
 
 ``IDP_OIDC_RATE_LIMITS`` (default: ``{"device_user_code": "5/m/ip", "client_registration": "3/m/ip", "cimd_fetch": "3/m/ip"}``)
   Rate limit configuration.
