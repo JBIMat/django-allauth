@@ -113,6 +113,10 @@ class AppSettings:
         )
 
     @property
+    def INTROSPECTION_CROSS_CLIENT_ALLOWED(self) -> bool:
+        return self._setting("INTROSPECTION_CROSS_CLIENT_ALLOWED", False)
+
+    @property
     def AUTHORIZATION_CODE_EXPIRES_IN(self) -> int:
         return self._setting("AUTHORIZATION_CODE_EXPIRES_IN", 60)
 

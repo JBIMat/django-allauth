@@ -119,6 +119,16 @@ Available settings:
   supported values are ``client_secret_basic``, ``client_secret_post`` and
   ``none`` (public clients).
 
+``IDP_OIDC_INTROSPECTION_CROSS_CLIENT_ALLOWED`` (default: ``False``)
+  Controls whether an authenticated client may introspect tokens issued to
+  *other* clients. An introspection response exposes metadata such as ``sub``,
+  ``scope``, ``aud`` and ``client_id``, so by default (``False``) a caller may
+  only introspect its own tokens; any other token yields ``{"active": false}``,
+  indistinguishable from an unknown one (as RFC 7662 requires). Enable only if
+  you intentionally rely on shared introspection; combine it with the adapter's
+  ``is_introspection_allowed`` to narrow cross-client access (e.g. to callers
+  listed in the token's audience).
+
 ``IDP_OIDC_REFRESH_TOKEN_EXPIRES_IN`` (default: ``None``)
   Set to a positive number of seconds to make refresh tokens expire. By
   default (``None``) refresh tokens do not expire. With

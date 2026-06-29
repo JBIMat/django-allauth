@@ -22,16 +22,23 @@ def oidc_client_secret():
 
 
 @pytest.fixture
-def oidc_client(db, oidc_client_secret):
-    client = Client.objects.create()
-    client.set_secret(oidc_client_secret)
+def oidc_client_factory(db, oidc_client_secret):
+    def f(*, secret=None):
+        client = Client.objects.create()
+        client.set_secret(oidc_client_secret if secret is None else secret)
+        client.set_redirect_uris(["https://client/callback"])
+        client.set_scopes(["profile", "openid", "email"])
+        client.set_grant_types([g.value for g in Client.GrantType])
+        client.set_response_types(["code", "token"])
+        client.save()
+        return client
 
-    client.set_redirect_uris(["https://client/callback"])
-    client.set_scopes(["profile", "openid", "email"])
-    client.set_grant_types([g.value for g in Client.GrantType])
-    client.set_response_types(["code", "token"])
-    client.save()
-    return client
+    return f
+
+
+@pytest.fixture
+def oidc_client(oidc_client_secret, oidc_client_factory):
+    return oidc_client_factory(secret=oidc_client_secret)
 
 
 @pytest.fixture

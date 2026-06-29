@@ -178,6 +178,12 @@ class OAuthLibRequestValidator(RequestValidator):
         if instance.user and not instance.user.is_active:
             return None
 
+        if (
+            not app_settings.INTROSPECTION_CROSS_CLIENT_ALLOWED
+            and instance.client_id != request.client.pk
+        ):
+            return None
+
         if not adapter.is_introspection_allowed(
             token=instance,
             caller_client=request.client,

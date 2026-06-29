@@ -305,3 +305,32 @@ def test_introspect_missing_token_is_invalid_request(
     )
     assert resp.status_code == HTTPStatus.BAD_REQUEST
     assert resp.json()["error"] == "invalid_request"
+
+
+@pytest.mark.parametrize("cross_client_allowed", [False, True])
+def test_introspect_other_client(
+    client,
+    oidc_client,
+    oidc_client_secret,
+    oidc_client_factory,
+    user,
+    opaque_access_token_factory,
+    cross_client_allowed,
+    settings,
+):
+    """An *opaque* access token gets a server-constructed RFC 7662 claim set."""
+    settings.IDP_OIDC_INTROSPECTION_CROSS_CLIENT_ALLOWED = cross_client_allowed
+    token, instance = opaque_access_token_factory(
+        oidc_client,
+        user,
+        scopes=["openid", "profile"],
+        resources=["https://api.example.com/a"],
+    )
+    other_oidc_client = oidc_client_factory(secret=oidc_client_secret)
+    resp = client.post(
+        reverse("idp:oidc:introspect"),
+        data={"token": token},
+        HTTP_AUTHORIZATION=_basic_auth(other_oidc_client.id, oidc_client_secret),
+    )
+    assert resp.status_code == HTTPStatus.OK
+    assert resp.json()["active"] == cross_client_allowed
