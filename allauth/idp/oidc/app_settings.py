@@ -152,8 +152,10 @@ class AppSettings:
             "client_registration": "3/m/ip",
             # CIMD fetches
             "cimd_fetch": "3/m/ip",
-            # token introspection
-            "introspect": "30/m/ip,10/m/key",
+            # token introspection, throttled per source IP (before client
+            # authentication) and per authenticated client (after).
+            "introspect_ip": "30/m/ip",
+            "introspect_client": "60/m/key",
         }
         ret.update(rls)
         return ret

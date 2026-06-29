@@ -102,8 +102,14 @@ Available settings:
        "device_user_code": "5/m/ip",
        "client_registration": "3/m/ip",
        "cimd_fetch": "3/m/ip",
-       "introspect": "30/m/ip,10/m/key",
+       "introspect_ip": "30/m/ip",
+       "introspect_client": "60/m/key",
       }
+
+  The introspection endpoint is throttled by two independent limits:
+  ``introspect_ip`` is enforced per source IP before client authentication, so
+  that unauthenticated and failed-authentication requests are bounded too, while
+  ``introspect_client`` is enforced per authenticated client afterwards.
 
 ``IDP_OIDC_AUTH_METHODS`` (default: ``["client_secret_basic", "client_secret_post", "none"]``)
   The authentication methods supported by the token, device authorization and

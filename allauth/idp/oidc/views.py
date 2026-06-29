@@ -528,6 +528,15 @@ class IntrospectView(View):
         ctx.supported_auth_methods = app_settings.INTROSPECTION_AUTH_METHODS
         orequest = extract_params(request)
         try:
+            # Throttle by source IP before client authentication runs, so that
+            # unauthenticated and failed-authentication requests are bounded as
+            # well. The per-client limit is consumed later, post-authentication.
+            ratelimit.consume(
+                request=request,
+                config=app_settings.RATE_LIMITS,
+                action="introspect_ip",
+                raise_exception=True,
+            )
             oresponse = get_server().create_introspect_response(*orequest)
         except RateLimited:
             return JsonResponse(

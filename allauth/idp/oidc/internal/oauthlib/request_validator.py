@@ -160,7 +160,7 @@ class OAuthLibRequestValidator(RequestValidator):
         ratelimit.consume(
             request=context.request,
             config=app_settings.RATE_LIMITS,
-            action="introspect",
+            action="introspect_client",
             key=request.client.id,
             raise_exception=True,
         )
