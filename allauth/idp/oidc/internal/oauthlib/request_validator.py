@@ -11,7 +11,7 @@ from oauthlib.common import Request
 from oauthlib.openid import RequestValidator
 
 from allauth.core import context
-from allauth.core.internal import httpkit, jwkkit
+from allauth.core.internal import httpkit, jwkkit, ratelimit
 from allauth.idp.oidc import app_settings
 from allauth.idp.oidc.adapter import get_adapter
 from allauth.idp.oidc.internal.clientkit import (
@@ -25,7 +25,7 @@ from allauth.idp.oidc.internal.oauthlib.utils import (
     get_validator_context,
 )
 from allauth.idp.oidc.internal.resources import InvalidTargetError, is_resources_subset
-from allauth.idp.oidc.internal.tokens import decode_jwt_token
+from allauth.idp.oidc.internal.tokens import decode_jwt_token, determine_token_type
 from allauth.idp.oidc.models import Client, Token
 
 
@@ -80,6 +80,11 @@ class OAuthLibRequestValidator(RequestValidator):
         self, client_id, request: Request, *args, **kwargs
     ) -> bool:
         """Ensure client_id belong to a non-confidential client."""
+        if (
+            Client.AuthenticationMethod.NONE
+            not in get_validator_context().supported_auth_methods
+        ):
+            return False
         client = self._lookup_client(request, client_id)
         if not client or client.type != Client.Type.PUBLIC:
             return False
@@ -87,8 +92,13 @@ class OAuthLibRequestValidator(RequestValidator):
         return True
 
     def authenticate_client(self, request: Request, *args, **kwargs) -> bool:
+        ctx = get_validator_context()
         client_id, client_secret = httpkit.extract_basic_auth(request.headers)
-        if not client_id and not client_secret:
+        if (
+            Client.AuthenticationMethod.CLIENT_SECRET_POST in ctx.supported_auth_methods
+            and not client_id
+            and not client_secret
+        ):
             client_id = getattr(request, "client_id", None)
             client_secret = getattr(request, "client_secret", None)
         if not isinstance(client_id, str):
@@ -114,6 +124,95 @@ class OAuthLibRequestValidator(RequestValidator):
         self, client_id, code, client, request: Request, *args, **kwargs
     ) -> bool:
         return authorization_codes.validate(client_id, code, request)
+
+    def introspect_token(
+        self, token, token_type_hint, request: Request, *args, **kwargs
+    ) -> dict | None:
+        """
+        https://datatracker.ietf.org/doc/html/rfc7662#section-2.1
+        > The protected resource calls the introspection endpoint using an HTTP
+        > POST [RFC7231] request with parameters sent as
+        > "application/x-www-form-urlencoded" data as defined in
+        > [W3C.REC-html5-20141028].  The protected resource sends a parameter
+        > representing the token along with optional parameters representing
+        > additional context that is known by the protected resource to aid the
+        > authorization server in its response.
+
+        > token
+        >     REQUIRED.  The string value of the token.  For access tokens, this
+        >     is the "access_token" value returned from the token endpoint
+        >     defined in OAuth 2.0 [RFC6749], Section 5.1.  For refresh tokens,
+        >     this is the "refresh_token" value returned from the token endpoint
+        >     as defined in OAuth 2.0 [RFC6749], Section 5.1.  Other token types
+        >     are outside the scope of this specification.
+
+        > token_type_hint
+        >     OPTIONAL.  A hint about the type of the token submitted for
+        >     introspection.  The protected resource MAY pass this parameter to
+        >     help the authorization server optimize the token lookup.  If the
+        >     server is unable to locate the token using the given hint, it MUST
+        >     extend its search across all of its supported token types.  An
+        >     authorization server MAY ignore this parameter, particularly if it
+        >     is able to detect the token type automatically.  Values for this
+        >     field are defined in the "OAuth Token Type Hints" registry defined
+        >     in OAuth Token Revocation [RFC7009].
+        """
+        ratelimit.consume(
+            request=context.request,
+            config=app_settings.RATE_LIMITS,
+            action="introspect",
+            key=request.client.id,
+            raise_exception=True,
+        )
+        types, fallback_types = determine_token_type(token, token_type_hint)
+        if types is None:
+            return None
+
+        instance = Token.objects.lookup_by_value(types, token)
+        if not instance and fallback_types:
+            instance = Token.objects.lookup_by_value(fallback_types, token)
+        if not instance:
+            return None
+
+        adapter = get_adapter()
+        if instance.user and not instance.user.is_active:
+            return None
+
+        if not adapter.is_introspection_allowed(
+            token=instance,
+            caller_client=request.client,
+        ):
+            """
+            https://datatracker.ietf.org/doc/html/rfc7662#section-2.3
+            > Note that a properly formed and authorized query for an inactive or
+            > otherwise invalid token (or a token the protected resource is not
+            > allowed to know about) is not considered an error response by this
+            > specification.  In these cases, the authorization server MUST instead
+            > respond with an introspection response with the "active" field set to
+            > "false" as described in Section 2.2.
+            """
+            return None
+
+        claims = {
+            "iss": adapter.get_issuer(),
+            "iat": int(instance.created_at.timestamp()),
+            "token_type": (
+                "refresh_token"
+                if instance.type == Token.Type.REFRESH_TOKEN
+                else "access_token"
+            ),
+            "scope": " ".join(instance.get_scopes()),
+        }
+        if aud := instance.get_resources():
+            claims["aud"] = aud
+        if instance.expires_at:
+            claims["exp"] = int(instance.expires_at.timestamp())
+        if instance.user and instance.client:
+            claims["sub"] = adapter.get_user_sub(instance.client, instance.user)
+        if instance.client:
+            claims["client_id"] = instance.client.id
+        adapter.populate_introspection_response(response=claims, token=instance)
+        return claims
 
     def confirm_redirect_uri(
         self, client_id, code, redirect_uri, client, request: Request, *args, **kwargs
@@ -348,9 +447,15 @@ class OAuthLibRequestValidator(RequestValidator):
         request.user = instance.user
         if not instance.client:
             return False
+        ctx = get_validator_context()
+        if (
+            instance.client.type == Client.Type.PUBLIC
+            and Client.AuthenticationMethod.NONE not in ctx.supported_auth_methods
+        ):
+            return False
         self._use_client(request, instance.client)
         request.scopes = granted_scopes
-        get_validator_context().access_token = instance
+        ctx.access_token = instance
         request.access_token = token
         return True
 
@@ -422,6 +527,14 @@ class OAuthLibRequestValidator(RequestValidator):
         return rt.get_scopes()
 
     def client_authentication_required(self, request: Request, *args, **kwargs) -> bool:
+        """
+        Determine if client authentication is required for current request.
+        """
+        if (
+            Client.AuthenticationMethod.NONE
+            not in get_validator_context().supported_auth_methods
+        ):
+            return True
         if request.client_id and request.client_secret:
             return True
 

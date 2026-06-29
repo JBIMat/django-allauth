@@ -24,6 +24,15 @@ _api_urlpatterns = [
     ),
 ]
 
+if app_settings.INTROSPECTION_ENABLED:
+    _api_urlpatterns.append(
+        path(
+            "introspect",
+            views.introspect,
+            name="introspect",
+        ),
+    )
+
 if not app_settings.USERINFO_ENDPOINT:
     _api_urlpatterns.append(
         path(

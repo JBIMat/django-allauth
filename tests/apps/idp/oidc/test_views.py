@@ -281,9 +281,10 @@ def test_configuration_view(
     client, oidc_client, custom_userinfo_endpoint, settings_impacting_urls
 ):
     with settings_impacting_urls(
+        IDP_OIDC_INTROSPECTION_ENABLED=True,
         IDP_OIDC_USERINFO_ENDPOINT=(
             "https://remote/userinfo" if custom_userinfo_endpoint else None
-        )
+        ),
     ):
         resp = client.get(reverse("idp:oidc:configuration"))
         assert resp.status_code == HTTPStatus.OK
@@ -305,12 +306,17 @@ def test_configuration_view(
                 "token",
             ],
             "revocation_endpoint": "http://testserver/identity/o/api/revoke",
+            "introspection_endpoint": "http://testserver/identity/o/api/introspect",
+            "introspection_endpoint_auth_methods_supported": [
+                "client_secret_basic",
+                "client_secret_post",
+            ],
             "subject_types_supported": ["public"],
             "token_endpoint": "http://testserver/identity/o/api/token",
             "token_endpoint_auth_methods_supported": [
-                "none",
                 "client_secret_basic",
                 "client_secret_post",
+                "none",
             ],
             "scopes_supported": ["openid", "profile", "email"],
             "userinfo_endpoint": (
@@ -326,6 +332,17 @@ def test_configuration_view(
                 "urn:ietf:params:oauth:grant-type:device_code",
             ],
         }
+
+
+def test_configuration_view_without_introspection(
+    client, oidc_client, settings_impacting_urls
+):
+    with settings_impacting_urls(IDP_OIDC_INTROSPECTION_ENABLED=False):
+        resp = client.get(reverse("idp:oidc:configuration"))
+        assert resp.status_code == HTTPStatus.OK
+        data = resp.json()
+        assert "introspection_endpoint" not in data
+        assert "introspection_endpoint_auth_methods_supported" not in data
 
 
 def test_post_userinfo(

@@ -35,7 +35,7 @@ from oauthlib.oauth2.rfc6749.errors import InvalidScopeError, OAuth2Error
 from allauth.account import app_settings as account_settings
 from allauth.account.adapter import get_adapter as get_account_adapter
 from allauth.account.internal.decorators import login_not_required
-from allauth.core.exceptions import ImmediateHttpResponse
+from allauth.core.exceptions import ImmediateHttpResponse, RateLimited
 from allauth.core.internal import jwkkit, ratelimit
 from allauth.core.internal.httpkit import (
     add_query_params,
@@ -117,15 +117,18 @@ class ConfigurationView(View):
                 request, reverse("idp:oidc:revoke")
             ),
             "token_endpoint": build_absolute_uri(request, reverse("idp:oidc:token")),
-            "token_endpoint_auth_methods_supported": [
-                Client.AuthenticationMethod.NONE,
-                Client.AuthenticationMethod.CLIENT_SECRET_BASIC,
-                Client.AuthenticationMethod.CLIENT_SECRET_POST,
-            ],
+            "token_endpoint_auth_methods_supported": app_settings.AUTH_METHODS,
             "userinfo_endpoint": userinfo_endpoint,
             "subject_types_supported": ["public"],
             **supported_types,
         }
+        if app_settings.INTROSPECTION_ENABLED:
+            data["introspection_endpoint"] = build_absolute_uri(
+                request, reverse("idp:oidc:introspect")
+            )
+            data["introspection_endpoint_auth_methods_supported"] = (
+                app_settings.INTROSPECTION_AUTH_METHODS
+            )
         if app_settings.DCR_ENABLED:
             data["registration_endpoint"] = build_absolute_uri(
                 request, reverse("idp:oidc:client_registration")
@@ -137,8 +140,9 @@ class ConfigurationView(View):
         return response
 
     def _get_supported_types(self) -> dict[str, list[str]]:
+        scopes_supported = ["openid", "profile", "email"]
         return {
-            "scopes_supported": ["openid", "profile", "email"],
+            "scopes_supported": scopes_supported,
             "grant_types_supported": sorted(gt.value for gt in Client.GrantType),
             "response_types_supported": sorted(rt.value for rt in Client.ResponseType),
         }
@@ -514,6 +518,29 @@ class RevokeView(View):
 
 
 revoke = RevokeView.as_view()
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+@method_decorator(login_not_required, name="dispatch")
+class IntrospectView(View):
+    def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        ctx = get_validator_context()
+        ctx.supported_auth_methods = app_settings.INTROSPECTION_AUTH_METHODS
+        orequest = extract_params(request)
+        try:
+            oresponse = get_server().create_introspect_response(*orequest)
+        except RateLimited:
+            return JsonResponse(
+                {
+                    "error": "temporarily_unavailable",
+                    "error_description": "Too many requests.",
+                },
+                status=HTTPStatus.TOO_MANY_REQUESTS,
+            )
+        return convert_response(*oresponse)
+
+
+introspect = IntrospectView.as_view()
 
 
 @method_decorator(csrf_exempt, name="dispatch")

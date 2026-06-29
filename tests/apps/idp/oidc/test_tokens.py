@@ -218,6 +218,25 @@ def test_revoke_refresh_token(
     assert not Token.objects.filter(pk=token_instance.pk).exists()
 
 
+def test_revoke_refresh_token_with_wrong_type_hint(
+    db, client, oidc_client, oidc_client_secret, user, refresh_token_factory
+):
+    """A wrong token_type_hint does not revoke when no matching token type exists."""
+    token_value, token_instance = refresh_token_factory(user=user, client=oidc_client)
+    resp = client.post(
+        reverse("idp:oidc:revoke"),
+        {
+            "token": token_value,
+            # Wrong hint on purpose: the token is a refresh token.
+            "token_type_hint": "access_token",
+            "client_id": oidc_client.id,
+            "client_secret": oidc_client_secret,
+        },
+    )
+    assert resp.status_code == HTTPStatus.OK
+    assert Token.objects.filter(pk=token_instance.pk).exists()
+
+
 @pytest.mark.parametrize(
     "auth_resources,token_resources,success",
     [

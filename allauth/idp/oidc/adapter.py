@@ -269,6 +269,31 @@ class DefaultOIDCAdapter(BaseAdapter):
             raise ImproperlyConfigured("No active private key.")
         return key
 
+    def populate_introspection_response(
+        self, *, response: dict[str, Any], token: Token
+    ) -> None:
+        """
+        This method can be used to add additional information to the introspection
+        response for a given token. The default implementation does nothing.
+        """
+        return None
+
+    def is_introspection_allowed(
+        self,
+        token: Token,
+        *,
+        caller_client: Client,
+    ) -> bool:
+        """
+        This method can be used to add additional checks to determine if a token is
+        valid in introspection responses and if the caller client is allowed to introspect it.
+        The default implementation allows all introspection requests for active tokens,
+        regardless of the caller client.
+
+        ``caller_client``: The authenticated introspection caller client.
+        """
+        return True
+
 
 def get_adapter() -> DefaultOIDCAdapter:
     return import_attribute(app_settings.ADAPTER)()

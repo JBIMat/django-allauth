@@ -91,6 +91,28 @@ class AppSettings:
         return self._setting("ACCESS_TOKEN_FORMAT", "opaque")
 
     @property
+    def AUTH_METHODS(self) -> tuple[str, ...]:
+        return tuple(
+            self._setting(
+                "AUTH_METHODS",
+                ["client_secret_basic", "client_secret_post", "none"],
+            )
+        )
+
+    @property
+    def INTROSPECTION_ENABLED(self) -> bool:
+        return self._setting("INTROSPECTION_ENABLED", False)
+
+    @property
+    def INTROSPECTION_AUTH_METHODS(self) -> tuple[str, ...]:
+        return tuple(
+            self._setting(
+                "INTROSPECTION_AUTH_METHODS",
+                ["client_secret_basic", "client_secret_post"],
+            )
+        )
+
+    @property
     def AUTHORIZATION_CODE_EXPIRES_IN(self) -> int:
         return self._setting("AUTHORIZATION_CODE_EXPIRES_IN", 60)
 
@@ -126,6 +148,8 @@ class AppSettings:
             "client_registration": "3/m/ip",
             # CIMD fetches
             "cimd_fetch": "3/m/ip",
+            # token introspection
+            "introspect": "30/m/ip,10/m/key",
         }
         ret.update(rls)
         return ret

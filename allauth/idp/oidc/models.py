@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Collection, Iterable
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -218,6 +218,14 @@ class TokenQuerySet(models.query.QuerySet["Token"]):
 
     def lookup(self, type, value: str) -> Token | None:
         return self.valid().by_value(value).filter(type=type).first()
+
+    def lookup_by_value(
+        self, types: Collection[Token.Type], value: str
+    ) -> Token | None:
+        try:
+            return self.valid().by_value(value).get(type__in=types)
+        except (Token.DoesNotExist, Token.MultipleObjectsReturned):
+            return None
 
 
 class Token(models.Model):

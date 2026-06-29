@@ -13,6 +13,7 @@ from oauthlib.oauth2.rfc6749.errors import OAuth2Error
 
 from allauth.account import app_settings as account_settings
 from allauth.core import context
+from allauth.idp.oidc import app_settings
 
 
 if TYPE_CHECKING:
@@ -99,6 +100,9 @@ class ValidatorContext:
     email: str | None = None
     access_token: Token | None = None
     refresh_token: Token | None = None
+    supported_auth_methods: tuple[Client.AuthenticationMethod, ...] = field(
+        default_factory=lambda: app_settings.AUTH_METHODS
+    )
     clients: dict[str, Client | None] = field(default_factory=dict)
     codes: dict[tuple[str, str], dict[str, Any] | None] = field(default_factory=dict)
     requested_resources: list[str] | None = None

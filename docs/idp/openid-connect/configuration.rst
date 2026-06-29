@@ -95,8 +95,29 @@ Available settings:
   ensuring clients refetch before a key they may still rely on is removed.
 
 
-``IDP_OIDC_RATE_LIMITS`` (default: ``{"device_user_code": "5/m/ip", "client_registration": "3/m/ip", "cimd_fetch": "3/m/ip"}``)
-  Rate limit configuration.
+``IDP_OIDC_RATE_LIMITS`` (default: ``{...}``)
+  Rate limit configuration, defaulting to::
+
+      {
+       "device_user_code": "5/m/ip",
+       "client_registration": "3/m/ip",
+       "cimd_fetch": "3/m/ip",
+       "introspect": "30/m/ip,10/m/key",
+      }
+
+``IDP_OIDC_AUTH_METHODS`` (default: ``["client_secret_basic", "client_secret_post", "none"]``)
+  The authentication methods supported by the token, device authorization and
+  revocation endpoints.  Currently supported values are ``client_secret_basic``,
+  ``client_secret_post`` and ``none`` (public clients).
+
+``IDP_OIDC_INTROSPECTION_ENABLED`` (default: ``False``)
+  Controls whether the token introspection endpoint is enabled. When enabled,
+  clients can introspect tokens by POSTing to the token introspection endpoint.
+
+``IDP_OIDC_INTROSPECTION_AUTH_METHODS`` (default: ``["client_secret_basic", "client_secret_post"]``)
+  The authentication methods supported by the introspection endpoint.  Currently
+  supported values are ``client_secret_basic``, ``client_secret_post`` and
+  ``none`` (public clients).
 
 ``IDP_OIDC_REFRESH_TOKEN_EXPIRES_IN`` (default: ``None``)
   Set to a positive number of seconds to make refresh tokens expire. By

@@ -26,6 +26,8 @@ Noteworthy changes
 - IdP: Added key rotation support via ``IDP_OIDC_PRIVATE_KEYS``, as well as
   cache control for the JWKS endpoint.
 
+- IdP: Added RFC 7662 OAuth 2.0 Token Introspection support.
+
 
 Fixes
 -----
