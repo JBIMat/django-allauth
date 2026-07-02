@@ -33,7 +33,7 @@ class AppSettings:
 
     @property
     def ID_TOKEN_EXPIRES_IN(self) -> int:
-        return 5 * 60
+        return self._setting("ID_TOKEN_EXPIRES_IN", 5 * 60)
 
     @property
     def PRIVATE_KEY(self) -> str:

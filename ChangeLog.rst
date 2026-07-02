@@ -34,6 +34,8 @@ Fixes
 
 - IdP: App native URLs wouldn't be accepted as ``post_logout_redirect_uri``.
 
+- IdP: Fix ``IDP_OIDC_ID_TOKEN_EXPIRES_IN`` always returning the default value, even if set in settings.
+
 
 65.18.0 (2026-05-29)
 ********************
