@@ -20,6 +20,36 @@ def test_rollback_consume(rf, enable_cache):
     assert not consume()
 
 
+def test_apply_rate():
+    rate = ratelimit.Rate(amount=2, duration=60, per="ip")
+    now = 1000.0
+
+    # First hit against an empty history: allowed and recorded.
+    allowed, history = ratelimit.apply_rate([], now, rate)
+    assert allowed
+    assert history == [now]
+
+    # Second hit within the window: allowed, recorded newest-first.
+    allowed, history = ratelimit.apply_rate(history, now + 1, rate)
+    assert allowed
+    assert history == [now + 1, now]
+
+    # Third hit within the window: over the limit, nothing recorded.
+    allowed, history = ratelimit.apply_rate(history, now + 2, rate)
+    assert not allowed
+    assert history == [now + 1, now]
+
+    # A dry run never records, even when allowed.
+    allowed, history = ratelimit.apply_rate([], now, rate, dry_run=True)
+    assert allowed
+    assert history == []
+
+    # Timestamps older than the duration are dropped, freeing capacity.
+    allowed, history = ratelimit.apply_rate([now - 61, now - 62], now, rate)
+    assert allowed
+    assert history == [now]
+
+
 @pytest.mark.parametrize(
     "rate,values",
     [

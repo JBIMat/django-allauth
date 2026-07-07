@@ -141,6 +141,21 @@ def get_cache_key(
     return ":".join(keys)
 
 
+def apply_rate(
+    history: list[float], now: float, rate: Rate, *, dry_run: bool = False
+) -> tuple[bool, list[float]]:
+    """Apply ``rate`` to the hit timestamps at ``now``, returning
+    ``(allowed, history)``: expired timestamps are dropped and, unless
+    ``dry_run``, an allowed hit is recorded. I/O-free, so needs no cache.
+    """
+    while history and history[-1] <= now - rate.duration:
+        history.pop()
+    allowed = len(history) < rate.amount
+    if allowed and not dry_run:
+        history.insert(0, now)
+    return allowed, history
+
+
 def _consume_single_rate(
     request: HttpRequest,
     *,
@@ -154,20 +169,17 @@ def _consume_single_rate(
     cache_key = get_cache_key(request, action=action, rate=rate, key=key, user=user)
     history = cache.get(cache_key, [])
     now = time.time()
-    while history and history[-1] <= now - rate.duration:
-        history.pop()
-    allowed = len(history) < rate.amount
+    allowed, history = apply_rate(history, now, rate, dry_run=dry_run)
     if allowed:
         usage = SingleRateLimitUsage(
             cache_key=cache_key, timestamp=now, cache_duration=rate.duration
         )
+        if not dry_run:
+            cache.set(cache_key, history, rate.duration)
     else:
         usage = None
-    if allowed and not dry_run:
-        history.insert(0, now)
-        cache.set(cache_key, history, rate.duration)
-    if not allowed and raise_exception:
-        raise RateLimited
+        if raise_exception:
+            raise RateLimited
     return usage
 
 
