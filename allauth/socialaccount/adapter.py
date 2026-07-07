@@ -32,6 +32,49 @@ from allauth.utils import import_attribute
 from . import app_settings
 
 
+def _build_apps_from_settings(
+    *, provider=None, client_id=None
+) -> dict[str, list[SocialApp]]:
+    """Build the ``provider -> [SocialApp]`` map from
+    ``settings.SOCIALACCOUNT_PROVIDERS``. Performs no database I/O. The optional
+    ``provider``/``client_id`` arguments restrict the result to apps whose
+    ``provider_id`` or ``provider`` matches ``provider``, and whose
+    ``client_id`` matches ``client_id``.
+    """
+    from allauth.socialaccount.models import SocialApp
+
+    provider_to_apps: dict[str, list[SocialApp]] = {}
+    for p, pcfg in app_settings.PROVIDERS.items():
+        app_configs = pcfg.get("APPS")
+        if app_configs is None:
+            app_config = pcfg.get("APP")
+            if app_config is None:
+                continue
+            app_configs = [app_config]
+
+        for config in app_configs:
+            app = SocialApp(provider=p)
+            for field in [
+                "name",
+                "provider_id",
+                "client_id",
+                "secret",
+                "key",
+                "settings",
+            ]:
+                if field in config:
+                    setattr(app, field, config[field])
+            if "certificate_key" in config:
+                warnings.warn("'certificate_key' should be moved into app.settings")
+                app.settings["certificate_key"] = config["certificate_key"]
+            if client_id and app.client_id != client_id:
+                continue
+            if provider and app.provider_id != provider and app.provider != provider:
+                continue
+            provider_to_apps.setdefault(p, []).append(app)
+    return provider_to_apps
+
+
 class DefaultSocialAccountAdapter(BaseAdapter):
     """The adapter class allows you to override various functionality of the
     ``allauth.socialaccount`` app.  To do so, point ``settings.SOCIALACCOUNT_ADAPTER`` to
@@ -273,39 +316,11 @@ class DefaultSocialAccountAdapter(BaseAdapter):
             apps.append(app)
 
         # Then, extend it with the settings backed apps.
-        for p, pcfg in app_settings.PROVIDERS.items():
-            app_configs = pcfg.get("APPS")
-            if app_configs is None:
-                app_config = pcfg.get("APP")
-                if app_config is None:
-                    continue
-                app_configs = [app_config]
-
-            apps = provider_to_apps.setdefault(p, [])
-            for config in app_configs:
-                app = SocialApp(provider=p)
-                for field in [
-                    "name",
-                    "provider_id",
-                    "client_id",
-                    "secret",
-                    "key",
-                    "settings",
-                ]:
-                    if field in config:
-                        setattr(app, field, config[field])
-                if "certificate_key" in config:
-                    warnings.warn("'certificate_key' should be moved into app.settings")
-                    app.settings["certificate_key"] = config["certificate_key"]
-                if client_id and app.client_id != client_id:
-                    continue
-                if (
-                    provider
-                    and app.provider_id != provider
-                    and app.provider != provider
-                ):
-                    continue
-                apps.append(app)
+        settings_apps = _build_apps_from_settings(
+            provider=provider, client_id=client_id
+        )
+        for p, apps in settings_apps.items():
+            provider_to_apps.setdefault(p, []).extend(apps)
 
         # Flatten the list of apps.
         apps = []
