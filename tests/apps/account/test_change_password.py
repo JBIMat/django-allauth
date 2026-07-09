@@ -1,8 +1,11 @@
 from http import HTTPStatus
+from unittest.mock import patch
 
-from django.urls import reverse, reverse_lazy
+from django.urls import NoReverseMatch, reverse, reverse_lazy
 
 import pytest
+
+from allauth.account.forms import ChangePasswordForm
 
 
 def test_change_unusable_password_redirects_to_set(client, user, user_password):
@@ -102,3 +105,18 @@ def test_change_password(
     assert resp.redirect_chain == redirect_chain
     assert len(mailoutbox) == 1
     assert "Your password has been changed" in mailoutbox[0].body
+
+
+def test_change_password_forgotten_link_not_present(client, db):
+    with patch("allauth.account.fields.reverse") as reverse_mock:
+        reverse_mock.side_effect = NoReverseMatch
+        form = ChangePasswordForm()
+        assert form.fields["oldpassword"].help_text == ""
+
+
+def test_change_password_forgotten_link_present(client, db):
+    form = ChangePasswordForm()
+    assert (
+        form.fields["oldpassword"].help_text
+        == '<a href="/accounts/password/reset/">Forgot your password?</a>'
+    )

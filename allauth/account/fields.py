@@ -4,6 +4,11 @@ from django import forms
 from django.contrib.auth import password_validation
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.core.validators import RegexValidator
+from django.template.exceptions import TemplateDoesNotExist
+from django.template.loader import render_to_string
+from django.urls import NoReverseMatch, reverse
+from django.utils.functional import lazy
+from django.utils.safestring import SafeString, mark_safe
 from django.utils.translation import gettext_lazy as _
 
 from allauth.account import app_settings
@@ -42,7 +47,31 @@ class PasswordField(forms.CharField):
         autocomplete = kwargs.pop("autocomplete", None)
         if autocomplete is not None:
             kwargs["widget"].attrs["autocomplete"] = autocomplete
+        show_reset_help = kwargs.pop("show_reset_help", False)
+        if show_reset_help:
+            # Lazily evaluation needed to avoid hitting ``reverse()`` at import
+            # time.
+            kwargs.setdefault("help_text", lazy(self._get_help_text, str, SafeString)())
         super().__init__(*args, **kwargs)
+
+    @staticmethod
+    def _get_help_text() -> SafeString:
+        try:
+            return mark_safe(  # nosec
+                render_to_string(
+                    f"account/password_reset_help_text.{app_settings.TEMPLATE_EXTENSION}"
+                )
+            )
+        except TemplateDoesNotExist:
+            pass
+
+        try:
+            reset_url = reverse("account_reset_password")
+        except NoReverseMatch:
+            return mark_safe("")  # nosec
+        else:
+            forgot_txt = _("Forgot your password?")
+            return mark_safe(f'<a href="{reset_url}">{forgot_txt}</a>')  # nosec
 
 
 class SetPasswordField(PasswordField):

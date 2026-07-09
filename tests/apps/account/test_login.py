@@ -315,7 +315,7 @@ class LoginTests(TestCase):
 
 
 def test_login_password_forgotten_link_not_present(client, db):
-    with patch("allauth.account.forms.reverse") as reverse_mock:
+    with patch("allauth.account.fields.reverse") as reverse_mock:
         reverse_mock.side_effect = NoReverseMatch
         form = LoginForm()
         assert form.fields["password"].help_text == ""

@@ -6,10 +6,6 @@ from django.contrib.auth.models import AbstractBaseUser
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.core import exceptions, validators
 from django.http import HttpRequest
-from django.template.exceptions import TemplateDoesNotExist
-from django.template.loader import render_to_string
-from django.urls import NoReverseMatch, reverse
-from django.utils.safestring import mark_safe
 from django.utils.translation import gettext, gettext_lazy as _, pgettext
 
 from allauth.account.app_settings import LoginMethod
@@ -65,7 +61,9 @@ class PasswordVerificationMixin:
 
 
 class LoginForm(forms.Form):
-    password = PasswordField(label=_("Password"), autocomplete="current-password")
+    password = PasswordField(
+        show_reset_help=True, label=_("Password"), autocomplete="current-password"
+    )
     remember = forms.BooleanField(label=_("Remember Me"), required=False)
 
     user = None
@@ -130,24 +128,6 @@ class LoginForm(forms.Form):
         password_field = app_settings.SIGNUP_FIELDS.get("password1")
         if not password_field:
             del self.fields["password"]
-            return
-        try:
-            self.fields["password"].help_text = render_to_string(
-                f"account/password_reset_help_text.{app_settings.TEMPLATE_EXTENSION}"
-            )
-            return
-        except TemplateDoesNotExist:
-            pass
-
-        try:
-            reset_url = reverse("account_reset_password")
-        except NoReverseMatch:
-            pass
-        else:
-            forgot_txt = _("Forgot your password?")
-            self.fields["password"].help_text = mark_safe(
-                f'<a href="{reset_url}">{forgot_txt}</a>'
-            )  # nosec
 
     def user_credentials(self) -> dict:
         """
@@ -597,7 +577,9 @@ class AddEmailForm(UserForm):
 
 class ChangePasswordForm(PasswordVerificationMixin, UserForm):
     oldpassword = PasswordField(
-        label=_("Current Password"), autocomplete="current-password"
+        show_reset_help=True,
+        label=_("Current Password"),
+        autocomplete="current-password",
     )
     password1 = SetPasswordField(label=_("New Password"))
     password2 = PasswordField(
@@ -712,7 +694,9 @@ class UserTokenForm(forms.Form):
 
 
 class ReauthenticateForm(forms.Form):
-    password = PasswordField(label=_("Password"), autocomplete="current-password")
+    password = PasswordField(
+        show_reset_help=True, label=_("Password"), autocomplete="current-password"
+    )
 
     def __init__(self, *args, **kwargs) -> None:
         self.user = kwargs.pop("user")

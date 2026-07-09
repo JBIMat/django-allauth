@@ -33,6 +33,11 @@ Noteworthy changes
   Connect) - for example, no longer pay their memory cost (roughly 8-10 MiB
   per process) unless a token is actually verified.
 
+- On the "Change Password" form, the "Forgot password?" link has been moved into
+  the password field help text, and the "Reauthenticate" form now shows it too.
+  As on the login form, the link can be customized via the
+  ``account/password_reset_help_text.html`` template.
+
 
 Fixes
 -----

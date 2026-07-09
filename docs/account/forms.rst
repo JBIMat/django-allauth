@@ -125,6 +125,10 @@ You have access to the following:
 
     ACCOUNT_FORMS = {'change_password': 'mysite.forms.MyCustomChangePasswordForm'}
 
+By default, the current password field renders a "Forgot your password?" link as the
+help text. By providing a ``"account/password_reset_help_text.html"`` template
+you can customize that text.
+
 
 Set Password
 ************
