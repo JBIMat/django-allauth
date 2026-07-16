@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import datetime
-from typing import Any, Union, get_args, get_origin
+from typing import Any, Iterable, Union, cast, get_args, get_origin
 
 from django import forms
 
@@ -27,9 +27,33 @@ FIELD_MAPPING = {
 }
 
 
+def _choice_values(field: forms.ChoiceField) -> list[Any]:
+    values: list[Any] = []
+    choices = cast(Iterable[tuple[Any, Any]], field.choices)
+    for value, label in choices:
+        if isinstance(label, (list, tuple)):
+            # Grouped choices (optgroups): label is a list of (value, label).
+            values.extend(subvalue for subvalue, _ in label)
+        else:
+            values.append(value)
+    return values
+
+
 def spec_for_field(field: forms.Field) -> dict[str, Any]:
-    field_spec: dict[str, Any] = FIELD_MAPPING.get(type(field), {"type": "string"})
-    field_spec = dict(field_spec)
+    field_spec: dict[str, Any]
+    if isinstance(field, forms.MultipleChoiceField):
+        item_spec: dict[str, Any] = {"type": "string"}
+        values = _choice_values(field)
+        if values:
+            item_spec["enum"] = values
+        field_spec = {"type": "array", "items": item_spec}
+    elif isinstance(field, forms.ChoiceField):
+        field_spec = {"type": "string"}
+        values = _choice_values(field)
+        if values:
+            field_spec["enum"] = values
+    else:
+        field_spec = dict(FIELD_MAPPING.get(type(field), {"type": "string"}))
     if hasattr(field, "max_length") and field.max_length:
         field_spec["maxLength"] = field.max_length
     if hasattr(field, "min_length") and field.min_length:
