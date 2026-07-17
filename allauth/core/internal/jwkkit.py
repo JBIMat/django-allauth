@@ -6,10 +6,7 @@ import hashlib
 import json
 from typing import Any
 
-import jwt
-from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
-from cryptography.hazmat.primitives.serialization import load_pem_private_key
-from jwt.algorithms import RSAAlgorithm
+from allauth.core.internal.deferred import cryptography, jwt
 
 
 # In lexicographic order as described in RFC7638
@@ -33,19 +30,23 @@ def jwk_thumbprint(jwk_dict: dict[str, Any]) -> str:
     return base64.urlsafe_b64encode(json_hash).rstrip(b"=").decode()
 
 
-def load_pem(pem: str) -> RSAPrivateKey:
-    private_key = load_pem_private_key(
+def load_pem(pem: str) -> cryptography.hazmat.primitives.asymmetric.rsa.RSAPrivateKey:
+    private_key = cryptography.hazmat.primitives.serialization.load_pem_private_key(
         pem.encode("utf8"),
         password=None,
     )
-    if not isinstance(private_key, RSAPrivateKey):
+    if not isinstance(
+        private_key, cryptography.hazmat.primitives.asymmetric.rsa.RSAPrivateKey
+    ):
         raise ValueError
     return private_key
 
 
-def load_jwk_from_pem(pem: str) -> tuple[dict[str, Any], RSAPrivateKey]:
+def load_jwk_from_pem(
+    pem: str,
+) -> tuple[dict[str, Any], cryptography.hazmat.primitives.asymmetric.rsa.RSAPrivateKey]:
     private_key = load_pem(pem)
     public_key = private_key.public_key()
-    jwk_dict = json.loads(RSAAlgorithm.to_jwk(public_key))
+    jwk_dict = json.loads(jwt.algorithms.RSAAlgorithm.to_jwk(public_key))
     jwk_dict["kid"] = jwk_thumbprint(jwk_dict)
     return jwk_dict, private_key

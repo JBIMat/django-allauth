@@ -15,11 +15,9 @@ from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.sessions.backends.base import SessionBase
 from django.utils.functional import SimpleLazyObject
 
-import jwt
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-
 from allauth.account.internal.userkit import str_to_user_id, user_id_to_str
 from allauth.core.internal import jwkkit
+from allauth.core.internal.deferred import cryptography, jwt
 from allauth.core.internal.sessionkit import get_session_user
 from allauth.headless import app_settings
 from allauth.headless.internal.sessionkit import lookup_session
@@ -47,12 +45,15 @@ def validate_access_token(token: str) -> tuple[Any, dict[str, Any]] | None:
     return lazy_user, payload
 
 
-def get_session_key_cipher(initialization_vector: bytes) -> Cipher:
+def get_session_key_cipher(
+    initialization_vector: bytes,
+) -> cryptography.hazmat.primitives.ciphers.Cipher:
+    ciphers = cryptography.hazmat.primitives.ciphers
     secret_key = settings.SECRET_KEY
     key = hashlib.sha256(secret_key.encode()).digest()
-    algorithm = algorithms.AES(key)
-    mode = modes.CTR(initialization_vector)
-    cipher = Cipher(algorithm, mode)
+    algorithm = ciphers.algorithms.AES(key)
+    mode = ciphers.modes.CTR(initialization_vector)
+    cipher = ciphers.Cipher(algorithm, mode)
     return cipher
 
 

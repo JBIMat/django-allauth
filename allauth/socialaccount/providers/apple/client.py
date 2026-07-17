@@ -6,8 +6,7 @@ from urllib.parse import parse_qsl, quote, urlencode
 
 from django.core.exceptions import ImproperlyConfigured
 
-import jwt
-
+from allauth.core.internal.deferred import jwt
 from allauth.socialaccount.adapter import get_adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client, OAuth2Error
 

@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
-import jwt
-
 from allauth.core.internal import jwkkit
+from allauth.core.internal.deferred import jwt
 from allauth.idp.oidc.adapter import get_adapter
 from allauth.idp.oidc.models import Token
 

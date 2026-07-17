@@ -7,13 +7,13 @@ from typing import Any
 
 from django.urls import reverse
 
-import jwt
 from oauthlib.common import Request
 from oauthlib.oauth2.rfc8628.endpoints import DeviceApplicationServer
 from oauthlib.openid import Server
 
 from allauth.core import context
 from allauth.core.internal import jwkkit
+from allauth.core.internal.deferred import jwt
 from allauth.idp.oidc import app_settings
 from allauth.idp.oidc.adapter import get_adapter
 from allauth.idp.oidc.internal.oauthlib.request_validator import (

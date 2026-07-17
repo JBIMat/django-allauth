@@ -28,6 +28,11 @@ Noteworthy changes
 
 - IdP: Added RFC 7662 OAuth 2.0 Token Introspection support.
 
+- The ``jwt`` and ``cryptography`` dependencies are now imported lazily.
+  Deployments that register JWT-verifying providers (e.g. Google, or OpenID
+  Connect) - for example, no longer pay their memory cost (roughly 8-10 MiB
+  per process) unless a token is actually verified.
+
 
 Fixes
 -----

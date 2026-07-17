@@ -6,12 +6,12 @@ from typing import Any
 
 from django.utils import timezone
 
-import jwt
 from oauthlib.common import Request
 from oauthlib.openid import RequestValidator
 
 from allauth.core import context
 from allauth.core.internal import httpkit, jwkkit, ratelimit
+from allauth.core.internal.deferred import jwt
 from allauth.idp.oidc import app_settings
 from allauth.idp.oidc.adapter import get_adapter
 from allauth.idp.oidc.internal.clientkit import (

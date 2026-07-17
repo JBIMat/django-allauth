@@ -5,10 +5,7 @@ import time
 
 from django.core.cache import cache
 
-import jwt
-from cryptography.hazmat.backends import default_backend
-from cryptography.x509 import load_pem_x509_certificate
-
+from allauth.core.internal.deferred import cryptography, jwt
 from allauth.socialaccount.adapter import get_adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Error
 
@@ -21,8 +18,8 @@ def lookup_kid_pem_x509_certificate(keys_data, kid):
     """
     key = keys_data.get(kid)
     if key:
-        public_key = load_pem_x509_certificate(
-            key.encode("utf8"), default_backend()
+        public_key = cryptography.x509.load_pem_x509_certificate(
+            key.encode("utf8"), cryptography.hazmat.backends.default_backend()
         ).public_key()
         return public_key
 
