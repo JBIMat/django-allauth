@@ -3,6 +3,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any
 
+from django.contrib.auth.middleware import get_user
 from django.http import HttpRequest
 from django.utils.functional import SimpleLazyObject, empty
 
@@ -44,6 +45,8 @@ def purge_request_user_cache(request: HttpRequest) -> None:
             delattr(request, attr)
     if isinstance(request.user, SimpleLazyObject):
         request.user._wrapped = empty
+    else:
+        request.user = SimpleLazyObject(lambda: get_user(request))  # type: ignore[assignment]
 
 
 @contextmanager
