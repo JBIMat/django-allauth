@@ -488,12 +488,11 @@ class AppSettings:
     def USERNAME_VALIDATORS(self):
         from django.contrib.auth import get_user_model
         from django.core.exceptions import ImproperlyConfigured
-
-        from allauth.utils import import_attribute
+        from django.utils.module_loading import import_string
 
         path = self._setting("USERNAME_VALIDATORS", None)
         if path:
-            ret = import_attribute(path)
+            ret = import_string(path)
             if not isinstance(ret, list):
                 raise ImproperlyConfigured(
                     "ACCOUNT_USERNAME_VALIDATORS is expected to be a list"
@@ -523,12 +522,13 @@ class AppSettings:
 
     @property
     def PASSWORD_RESET_TOKEN_GENERATOR(self):
+        from django.utils.module_loading import import_string
+
         from allauth.account.forms import EmailAwarePasswordResetTokenGenerator
-        from allauth.utils import import_attribute
 
         token_generator_path = self._setting("PASSWORD_RESET_TOKEN_GENERATOR", None)
         if token_generator_path is not None:
-            token_generator = import_attribute(token_generator_path)
+            token_generator = import_string(token_generator_path)
         else:
             token_generator = EmailAwarePasswordResetTokenGenerator
         return token_generator

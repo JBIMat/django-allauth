@@ -23,13 +23,13 @@ class AppSettings:
 
     @property
     def TOKEN_STRATEGY(self):
-        from allauth.utils import import_attribute
+        from django.utils.module_loading import import_string
 
         path = self._setting(
             "TOKEN_STRATEGY",
             "allauth.headless.tokens.strategies.sessions.SessionTokenStrategy",
         )
-        cls = import_attribute(path)
+        cls = import_string(path)
         return cls()
 
     @property

@@ -8,6 +8,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.db import models
 from django.forms.fields import Field
+from django.utils.module_loading import import_string
 
 from allauth.account import app_settings as account_settings
 from allauth.account.models import EmailAddress
@@ -15,7 +16,6 @@ from allauth.account.utils import user_display, user_username
 from allauth.core.internal.adapter import BaseAdapter
 from allauth.core.internal.httpkit import default_get_frontend_url
 from allauth.headless import app_settings
-from allauth.utils import import_attribute
 
 
 class DefaultHeadlessAdapter(BaseAdapter):
@@ -147,4 +147,4 @@ class DefaultHeadlessAdapter(BaseAdapter):
 
 
 def get_adapter() -> DefaultHeadlessAdapter:
-    return import_attribute(app_settings.ADAPTER)()
+    return import_string(app_settings.ADAPTER)()

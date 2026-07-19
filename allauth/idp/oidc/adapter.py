@@ -10,6 +10,7 @@ from django.contrib.auth.base_user import AbstractBaseUser
 from django.core.exceptions import ImproperlyConfigured
 from django.core.management.utils import get_random_secret_key
 from django.utils import timezone
+from django.utils.module_loading import import_string
 from django.utils.translation import gettext_lazy as _
 
 from allauth.account.internal.userkit import (
@@ -22,7 +23,6 @@ from allauth.core.internal.adapter import BaseAdapter
 from allauth.core.internal.cryptokit import generate_user_code
 from allauth.idp.oidc import app_settings
 from allauth.idp.oidc.internal.private_keys import filter_keys, pick_signing_key
-from allauth.utils import import_attribute
 
 
 if TYPE_CHECKING:
@@ -296,4 +296,4 @@ class DefaultOIDCAdapter(BaseAdapter):
 
 
 def get_adapter() -> DefaultOIDCAdapter:
-    return import_attribute(app_settings.ADAPTER)()
+    return import_string(app_settings.ADAPTER)()

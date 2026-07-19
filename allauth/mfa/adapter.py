@@ -4,6 +4,7 @@ from io import BytesIO
 from urllib.parse import quote, urlencode
 
 from django.contrib.auth.base_user import AbstractBaseUser
+from django.utils.module_loading import import_string
 from django.utils.translation import gettext, gettext_lazy as _
 
 from allauth import app_settings as allauth_settings
@@ -18,7 +19,6 @@ from allauth.core import context
 from allauth.core.internal.adapter import BaseAdapter
 from allauth.mfa import app_settings
 from allauth.mfa.models import Authenticator
-from allauth.utils import import_attribute
 
 
 class DefaultMFAAdapter(BaseAdapter):
@@ -162,4 +162,4 @@ class DefaultMFAAdapter(BaseAdapter):
 
 
 def get_adapter() -> DefaultMFAAdapter:
-    return import_attribute(app_settings.ADAPTER)()
+    return import_string(app_settings.ADAPTER)()

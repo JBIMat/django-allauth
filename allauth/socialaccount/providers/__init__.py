@@ -5,8 +5,7 @@ from collections import OrderedDict
 
 from django.apps import apps
 from django.conf import settings
-
-from allauth.utils import import_attribute
+from django.utils.module_loading import import_string
 
 
 class ProviderRegistry:
@@ -51,7 +50,7 @@ class ProviderRegistry:
                             "provider_class"
                         )
                         if provider_class:
-                            cls = import_attribute(provider_class)
+                            cls = import_string(provider_class)
                         self.register(cls)
             self.loaded = True
 

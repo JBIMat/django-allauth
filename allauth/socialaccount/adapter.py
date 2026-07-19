@@ -17,6 +17,8 @@ if TYPE_CHECKING:
     from allauth.socialaccount.models import SocialLogin, SocialApp
     from allauth.socialaccount.providers.base.provider import Provider
 
+from django.utils.module_loading import import_string
+
 from allauth.account.adapter import get_adapter as get_account_adapter
 from allauth.account.internal.emailkit import valid_email_or_none
 from allauth.account.utils import (
@@ -27,7 +29,6 @@ from allauth.account.utils import (
 )
 from allauth.core.internal.adapter import BaseAdapter
 from allauth.core.internal.modelkit import deserialize_instance, serialize_instance
-from allauth.utils import import_attribute
 
 from . import app_settings
 
@@ -431,4 +432,4 @@ class DefaultSocialAccountAdapter(BaseAdapter):
 
 
 def get_adapter(request: HttpRequest | None = None) -> DefaultSocialAccountAdapter:
-    return import_attribute(app_settings.ADAPTER)(request)
+    return import_string(app_settings.ADAPTER)(request)

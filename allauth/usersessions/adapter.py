@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from django.utils.module_loading import import_string
+
 from allauth.core.internal.adapter import BaseAdapter
 from allauth.usersessions import app_settings
-from allauth.utils import import_attribute
 
 
 class DefaultUserSessionsAdapter(BaseAdapter):
@@ -19,4 +20,4 @@ class DefaultUserSessionsAdapter(BaseAdapter):
 
 
 def get_adapter() -> DefaultUserSessionsAdapter:
-    return import_attribute(app_settings.ADAPTER)()
+    return import_string(app_settings.ADAPTER)()

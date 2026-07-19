@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 from django.urls import include, path
-
-from allauth.utils import import_attribute
+from django.utils.module_loading import import_string
 
 
 def default_urlpatterns(provider):
-    login_view = import_attribute(f"{provider.get_package()}.views.oauth_login")
-    callback_view = import_attribute(f"{provider.get_package()}.views.oauth_callback")
+    login_view = import_string(f"{provider.get_package()}.views.oauth_login")
+    callback_view = import_string(f"{provider.get_package()}.views.oauth_callback")
 
     urlpatterns = [
         path("login/", login_view, name=f"{provider.id}_login"),

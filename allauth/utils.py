@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import importlib
 import random
 import re
 import string
 import unicodedata
+import warnings
 from collections import OrderedDict
 from urllib.parse import urlsplit
 
@@ -13,6 +13,7 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ImproperlyConfigured, ValidationError
 from django.http import HttpRequest
 from django.utils.encoding import force_str
+from django.utils.module_loading import import_string
 
 from allauth import app_settings
 from allauth.core import context
@@ -122,15 +123,18 @@ def generate_unique_username(txts: list[str | None], regex=None) -> str:
 
 
 def import_attribute(path):
-    assert isinstance(path, str)  # nosec
-    pkg, attr = path.rsplit(".", 1)
-    ret = getattr(importlib.import_module(pkg), attr)
-    return ret
+    warnings.warn(
+        "allauth.utils.import_attribute is deprecated, use "
+        "django.utils.module_loading.import_string instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return import_string(path)
 
 
 def import_callable(path_or_callable):
     if not callable(path_or_callable):
-        ret = import_attribute(path_or_callable)
+        ret = import_string(path_or_callable)
     else:
         ret = path_or_callable
     return ret
@@ -206,7 +210,7 @@ def build_absolute_uri(
 def get_form_class(forms, form_id, default_form):
     form_class = forms.get(form_id, default_form)
     if isinstance(form_class, str):
-        form_class = import_attribute(form_class)
+        form_class = import_string(form_class)
     return form_class
 
 

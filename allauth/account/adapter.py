@@ -40,6 +40,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.encoding import force_str
+from django.utils.module_loading import import_string
 from django.utils.translation import gettext_lazy as _
 
 from allauth import app_settings as allauth_settings
@@ -54,7 +55,7 @@ from allauth.core.internal.httpkit import (
     headed_redirect_response,
     is_headless_request,
 )
-from allauth.utils import generate_unique_username, import_attribute
+from allauth.utils import generate_unique_username
 
 
 if TYPE_CHECKING:
@@ -1070,4 +1071,4 @@ class DefaultAccountAdapter(BaseAdapter):
 
 
 def get_adapter(request: HttpRequest | None = None) -> DefaultAccountAdapter:
-    return import_attribute(app_settings.ADAPTER)(request)
+    return import_string(app_settings.ADAPTER)(request)
