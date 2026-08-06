@@ -85,7 +85,8 @@ def test(session, django, project):
         f"django~={django_version}",
         "pytest>=8.3.5,<9",
         "pytest-asyncio==1.3.0",
-        "pytest-django>=4.11,<5",
+        # pytest-django 4.13 dropped support for Django 4.2 and 5.1.
+        "pytest-django>=4.11,<4.13",
         "Pillow>=9.0",
         "coverage==7.6.1",
         # SAML is disabled in CI
