@@ -11,6 +11,8 @@
 Noteworthy changes
 -------------------
 
+- Officially support Django 6.1.
+
 - IdP: Added support for Client ID Metadata Document (CIMD).
 
 - IdP: Added ``IDP_OIDC_REFRESH_TOKEN_EXPIRES_IN``, allowing refresh tokens to

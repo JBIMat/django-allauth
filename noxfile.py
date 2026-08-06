@@ -53,6 +53,7 @@ DJANGO_PYTHON_REQ = {
     "5.1": ("3.10", "3.11", "3.12", "3.13"),
     "5.2": ("3.10", "3.11", "3.12", "3.13", "3.14"),
     "6.0": ("3.12", "3.13", "3.14"),
+    "6.1": ("3.12", "3.13", "3.14"),
 }
 DJANGO_LTS = "5.2"
 
@@ -79,7 +80,7 @@ def test(session, django, project):
     if session.python not in DJANGO_PYTHON_REQ[django]:
         print(f"Skipping: Django {django} does not support python{session.python}")
         return
-    django_version = f"{django}.0" if django != "6.0" else "6.0rc1"
+    django_version = f"{django}.0" if django != "6.2" else "6.2rc1"
     session.install(
         f"django~={django_version}",
         "pytest>=8.3.5,<9",
@@ -93,7 +94,10 @@ def test(session, django, project):
         # "lxml==5.2.1",
         "pyyaml>=6.0.2,<7",
         "psycopg2-binary>=2.9.10,<3",
-        "djangorestframework>=3.15.2,<4",
+        # The released DRF 3.17.2 is missing the Django 6.1+ compat fix (its
+        # `cc_delim_re` import was only replaced on a post-tag main commit), so
+        # pin to that specific commit until a fixed release is out.
+        "djangorestframework @ git+https://github.com/encode/django-rest-framework@fbb02d9be78b1e232784dbb813c3fa118c1ba076",
         "django-ninja>=1.3.0,<2",
         "mypy==1.19.1",
         ".[mfa,openid,socialaccount,steam]",  # SAML is disabled in CI
