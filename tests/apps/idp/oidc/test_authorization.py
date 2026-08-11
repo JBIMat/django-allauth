@@ -720,3 +720,43 @@ def test_authorization_code_app_redirect_uri(
     assert resp.status_code == HTTPStatus.FOUND
     redirected_uri = resp["location"]
     assert redirected_uri.startswith(redirect_uri)
+
+
+@pytest.mark.parametrize(
+    "client_fixture,scope,error",
+    [
+        ("client", "openid", "login_required"),
+        ("auth_client", "openid profile", "consent_required"),
+    ],
+)
+def test_prompt_none_app_redirect_uri(
+    request,
+    client_fixture,
+    scope,
+    error,
+    oidc_client,
+    user,
+    access_token_factory,
+):
+    """Errors are redirected to app native redirect URIs as well."""
+    redirect_uri = "org.allauth.app://callback"
+    oidc_client.set_redirect_uris([redirect_uri])
+    oidc_client.save()
+    access_token_factory(oidc_client, user, scopes=["openid"])
+    client = request.getfixturevalue(client_fixture)
+    resp = client.get(
+        reverse("idp:oidc:authorization")
+        + "?"
+        + urlencode(
+            {
+                "client_id": oidc_client.id,
+                "response_type": "code",
+                "scope": scope,
+                "redirect_uri": redirect_uri,
+                "state": "some-state",
+                "prompt": "none",
+            }
+        )
+    )
+    assert resp.status_code == HTTPStatus.FOUND
+    assert resp["location"] == f"{redirect_uri}?error={error}&state=some-state"

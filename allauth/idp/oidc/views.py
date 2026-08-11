@@ -179,7 +179,7 @@ class AuthorizationView(FormView):
         except (errors.FatalClientError, ValidationError) as e:
             return respond_html_error(request, error=e)
         except errors.OAuth2Error as e:
-            return HttpResponseRedirect(e.in_uri(e.redirect_uri))
+            return _ClientHttpResponseRedirect(e.in_uri(e.redirect_uri))
         if self._request_info["request"].client.skip_consent:
             return self._skip_consent()
         return super().get(request, *args, **kwargs)
