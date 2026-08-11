@@ -11,7 +11,7 @@
     {% element p %}
         {% blocktranslate with client_name=client.name site_name=site.name %}{{ client_name }} wants to access your {{ site_name }} account.{% endblocktranslate %}
     {% endelement %}
-    {% url 'idp:openid_connect:authorize' as authorize_url %}
+    {% url 'idp:oidc:authorization' as authorize_url %}
     {% element form method="post" action=authorize_url %}
         {% slot body %}
             {% csrf_token %}

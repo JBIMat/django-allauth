@@ -11,7 +11,9 @@
 Fixes
 -----
 
-- ...
+- IdP: Fixed an incorrect URL reverse in the OpenID Connect authorization
+  template. It silently resolved to an empty form action (posting back to the
+  same URL), so the flow kept working regardless.
 
 
 65.19.0 (2026-08-06)
