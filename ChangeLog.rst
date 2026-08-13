@@ -15,6 +15,9 @@ Fixes
   template. It silently resolved to an empty form action (posting back to the
   same URL), so the flow kept working regardless.
 
+- IdP: Redirectable errors from the authorization endpoint were not delivered to
+  clients registered with an app native (non-http(s)) ``redirect_uri``.
+
 
 Security notice
 ---------------
