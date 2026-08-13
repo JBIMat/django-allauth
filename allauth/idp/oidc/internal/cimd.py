@@ -125,7 +125,7 @@ def fetch_client(client_id: str) -> Client:
 def _get_list_of_str(
     metadata: dict, field: str, dflt: list[str] | None = None
 ) -> list[str]:
-    if field not in metadata and dflt:
+    if field not in metadata and dflt is not None:
         return dflt
     value = metadata.get(field)
     if (
@@ -156,7 +156,7 @@ def validate_metadata(client_id: str, parsed: ParseResult, metadata: Any) -> Cli
     grant_types = _get_list_of_str(metadata, "grant_types", ["authorization_code"])
     redirect_uris = _get_list_of_str(metadata, "redirect_uris")
     response_types = _get_list_of_str(metadata, "response_types", ["code"])
-
+    _get_list_of_str(metadata, "post_logout_redirect_uris", [])
     client = Client(
         id=client_id,
         name=name,

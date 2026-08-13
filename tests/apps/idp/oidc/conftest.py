@@ -26,7 +26,7 @@ def oidc_client_factory(db, oidc_client_secret):
     def f(*, secret=None):
         client = Client.objects.create()
         client.set_secret(oidc_client_secret if secret is None else secret)
-        client.set_redirect_uris(["https://client/callback"])
+        client.set_redirect_uris(["https://rp.client/callback"])
         client.set_scopes(["profile", "openid", "email"])
         client.set_grant_types([g.value for g in Client.GrantType])
         client.set_response_types(["code", "token"])

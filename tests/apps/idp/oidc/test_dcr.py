@@ -95,6 +95,7 @@ def test_confidential_client(register_client):
         {
             "client_name": "My Server",
             "redirect_uris": ["https://example.com/callback"],
+            "post_logout_redirect_uris": ["https://example.com/logout"],
             "token_endpoint_auth_method": "client_secret_basic",
         },
     )
@@ -106,6 +107,7 @@ def test_confidential_client(register_client):
     client = Client.objects.get(id=data["client_id"])
     assert client.type == Client.Type.CONFIDENTIAL
     assert client.check_secret(data["client_secret"])
+    assert client.get_post_logout_redirect_uris() == ["https://example.com/logout"]
 
 
 def test_missing_redirect_uris(register_client):
@@ -114,6 +116,23 @@ def test_missing_redirect_uris(register_client):
     assert resp.json() == {
         "error": "invalid_redirect_uri",
         "error_description": "'redirect_uris': This field is required.",
+    }
+
+
+def test_invalid_post_logout_redirect_uris(register_client):
+    resp = register_client(
+        {
+            "redirect_uris": ["https://example.com/callback"],
+            "post_logout_redirect_uris": ["https://example.com/logout", 123],
+        }
+    )
+    assert resp.status_code == HTTPStatus.BAD_REQUEST
+    assert resp.json() == {
+        "error": "invalid_client_metadata",
+        "error_description": (
+            "'post_logout_redirect_uris': post_logout_redirect_uris must be an"
+            " array of strings."
+        ),
     }
 
 

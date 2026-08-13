@@ -586,7 +586,7 @@ class OAuthLibRequestValidator(RequestValidator):
         return authorization_code
 
     def is_origin_allowed(
-        self, client_id, origin, request: Request, *args, **kwargs
+        self, client_id: str, origin: str, request: Request, *args, **kwargs
     ) -> bool:
         client = self._lookup_client(request, client_id)
         return bool(

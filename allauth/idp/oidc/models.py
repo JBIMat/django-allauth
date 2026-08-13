@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import logging
 from collections.abc import Collection, Iterable
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
 from django.conf import settings
 from django.contrib.auth.hashers import check_password, make_password
@@ -12,6 +14,9 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from allauth.idp.oidc.adapter import get_adapter
+
+
+logger = logging.getLogger(__name__)
 
 
 def default_client_id() -> str:
@@ -142,6 +147,39 @@ class Client(models.Model):
 
     def set_redirect_uris(self, uris: list[str]) -> None:
         self.redirect_uris = _values_to_text(uris)
+
+    def set_post_logout_redirect_uris(self, uris: list[str]) -> None:
+        metadata = self._get_client_metadata()
+        if metadata is None:
+            if self.data is None:
+                self.data = {}
+            metadata = self.data["client_metadata"] = {}
+        metadata["post_logout_redirect_uris"] = uris
+
+    def get_post_logout_redirect_uris(self) -> list[str]:
+        dflt: list[str] = []
+        metadata = self._get_client_metadata()
+        if not metadata:
+            return dflt
+        uris = metadata.get("post_logout_redirect_uris")
+        if uris is None:
+            return dflt
+        if not isinstance(uris, list) or not all(isinstance(uri, str) for uri in uris):
+            logger.warning("Client %s has malformed post_logout_redirect_uris", self.pk)
+            return dflt
+        return uris
+
+    def _get_client_metadata(self) -> dict[str, Any] | None:
+        if self.data is None:
+            return None
+        if not isinstance(self.data, dict):
+            logger.warning("Client %s has non-dict data", self.pk)
+            return None
+        metadata = self.data.get("client_metadata")
+        if metadata is not None and not isinstance(metadata, dict):
+            logger.warning("Client %s has non-dict client_metadata", self.pk)
+            return None
+        return metadata
 
     def get_cors_origins(self) -> list[str]:
         return _values_from_text(self.cors_origins)

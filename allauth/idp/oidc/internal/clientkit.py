@@ -131,9 +131,33 @@ def is_origin_allowed(
     return False
 
 
+def is_post_logout_redirect_uri_allowed(
+    client: Client, post_logout_redirect_uri: str, parsed_uri: ParseResult
+) -> bool:
+    registered_uris = client.get_post_logout_redirect_uris()
+    if registered_uris:
+        # Logout redirect URIs were explicitly set, so only accept those.
+        return is_redirect_uri_allowed(
+            post_logout_redirect_uri, registered_uris, client.allow_uri_wildcards
+        )
+    # No explicit redirect URIs configured. Let's at least check the netloc
+    # against redirect_uris. But, we can only do so for proper http(s) urls,
+    # as app uris like 'org.allauth.app://logout' don't have that.
+    if parsed_uri.scheme in ("http", "https"):
+        return is_origin_allowed(
+            post_logout_redirect_uri,
+            client.get_redirect_uris(),
+            client.allow_uri_wildcards,
+        )
+    else:
+        # Our caller did already perform scheme validation, meaning,
+        # scheme 'org.allauth.app' would pass, and 'com.evil.app' would not.
+        return True
+
+
 def get_used_schemes(client: Client) -> set[str]:
     schemes = set()
-    for uri in client.get_redirect_uris():
+    for uri in client.get_redirect_uris() + client.get_post_logout_redirect_uris():
         parsed = urlparse(uri)
         if parsed.scheme:
             schemes.add(parsed.scheme)
@@ -154,18 +178,25 @@ def clean_post_logout_redirect_uri(
     parameter or via another mechanism. An id_token_hint is also RECOMMENDED
     when this parameter is included.
     """
+    if not client:
+        # Without a client we have no way of validating this part:
+        # "...The value MUST have been previously registered...".
+        return None
     if not post_logout_redirect_uri:
         return None
     allowed_schemes = {"https"}
-    if client:
-        allowed_schemes.update(get_used_schemes(client))
-        if client.type == Client.Type.CONFIDENTIAL:
-            allowed_schemes.add("http")
+    allowed_schemes.update(get_used_schemes(client))
+    if client.type == Client.Type.CONFIDENTIAL:
+        allowed_schemes.add("http")
     parsed = urlparse(post_logout_redirect_uri)
     if not parsed.scheme or parsed.scheme not in allowed_schemes:
         raise ValidationError(URLField.default_error_messages["invalid"])
     if parsed.scheme in ("http", "https"):
         URLField().clean(post_logout_redirect_uri)
+    if not is_post_logout_redirect_uri_allowed(
+        client, post_logout_redirect_uri, parsed
+    ):
+        raise ValidationError(URLField.default_error_messages["invalid"])
     return post_logout_redirect_uri
 
 

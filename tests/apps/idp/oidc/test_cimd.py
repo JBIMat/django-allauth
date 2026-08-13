@@ -56,6 +56,7 @@ def _metadata_factory(**overrides):
         "scope": "openid profile",
         "grant_types": ["authorization_code"],
         "response_types": ["code"],
+        "post_logout_redirect_uris": ["https://app.example.com/logout"],
     }
     for k, v in overrides.items():
         if v is NotImplemented:
@@ -110,6 +111,7 @@ def test_validate_metadata(db):
     assert client.type == Client.Type.PUBLIC
     assert client.get_scopes() == ["openid", "profile"]
     assert client.get_redirect_uris() == ["https://app.example.com/callback"]
+    assert client.get_post_logout_redirect_uris() == ["https://app.example.com/logout"]
     assert client.get_grant_types() == ["authorization_code"]
     assert client.get_response_types() == ["code"]
     assert client.data["cimd"] is True
@@ -125,6 +127,8 @@ def test_validate_metadata_defaults(db):
     assert client.get_grant_types() == ["authorization_code"]
     assert client.get_response_types() == ["code"]
     assert client.name == "app.example.com"
+    # post_logout_redirect_uris is optional; when omitted, there are none.
+    assert client.get_post_logout_redirect_uris() == []
 
 
 @pytest.mark.parametrize(
@@ -135,6 +139,20 @@ def test_validate_metadata_defaults(db):
         (_metadata_factory(scope=["openid"]), "scope"),
         (_metadata_factory(redirect_uris=[123]), "redirect_uris"),
         (_metadata_factory(redirect_uris=NotImplemented), "redirect_uris"),
+        (
+            _metadata_factory(post_logout_redirect_uris=[123]),
+            "post_logout_redirect_uris",
+        ),
+        (
+            _metadata_factory(
+                post_logout_redirect_uris="https://app.example.com/logout"
+            ),
+            "post_logout_redirect_uris",
+        ),
+        (
+            _metadata_factory(post_logout_redirect_uris=[]),
+            "post_logout_redirect_uris",
+        ),
     ],
 )
 def test_validate_metadata_invalid(db, metadata, error_match):

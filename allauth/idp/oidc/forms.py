@@ -187,6 +187,7 @@ class RPInitiatedLogoutForm(forms.Form):
 class ClientRegistrationForm(forms.Form):
     client_name = Client._meta.get_field("name").formfield(required=False)
     redirect_uris = forms.JSONField(required=True)
+    post_logout_redirect_uris = forms.JSONField(required=False)
     grant_types = forms.JSONField(required=False)
     response_types = forms.JSONField(required=False)
     token_endpoint_auth_method = forms.CharField(required=False)
@@ -215,6 +216,9 @@ class ClientRegistrationForm(forms.Form):
                 "redirect_uris is required and must be a non-empty array."
             )
         return uris
+
+    def clean_post_logout_redirect_uris(self) -> list[str]:
+        return self._clean_string_list("post_logout_redirect_uris")
 
     def clean_grant_types(self) -> list[str]:
         grant_types = self._clean_string_list("grant_types") or ["authorization_code"]

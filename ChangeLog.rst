@@ -16,6 +16,16 @@ Fixes
   same URL), so the flow kept working regardless.
 
 
+Security notice
+---------------
+
+- IdP: The OpenID Connect RP-initiated logout endpoint honored any
+  ``post_logout_redirect_uri`` that could not be tied to a registered client,
+  making it an open redirector. It now only redirects to URIs that can be
+  verified as registered. The impact is low: no tokens or secrets are exposed,
+  it merely allowed redirecting the user agent to an arbitrary URL after logout.
+
+
 65.19.0 (2026-08-06)
 ********************
 

@@ -546,9 +546,9 @@ def test_prompt_none(
     )
     assert resp.status_code == HTTPStatus.FOUND
     if error:
-        assert resp["location"] == f"https://client/callback?error={error}"
+        assert resp["location"] == f"https://rp.client/callback?error={error}"
     else:
-        assert resp["location"].startswith("https://client/callback?code=")
+        assert resp["location"].startswith("https://rp.client/callback?code=")
 
 
 def test_authorization_code_invalid_with_resource(
